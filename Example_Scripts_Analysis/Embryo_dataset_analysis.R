@@ -80,7 +80,6 @@ cell_sizes <- compute_cell_sizes(
 )
 
 test_run <- run_full_cnv_pipeline(
-  precomputed = list(1),
   start_from = "block2",
   save_intermediate = T,
   outdir            = "C:/Users/pmgra/Documents/VUB/Experimental_code/test_output/",
@@ -101,7 +100,6 @@ test_run <- run_full_cnv_pipeline(
   no_plot           = TRUE,
   resume_if_exists  = TRUE,
   base_dir                              = "C:/Users/pmgra/Documents/VUB/InferCNV/TE_test",
-  modes                                 = c("within"),
   tool                                  = "infercnv",
   pattern                               = "^run\\.final",
   max_gap                               = 100000,
@@ -110,8 +108,6 @@ test_run <- run_full_cnv_pipeline(
   filter_seq_mb_init                    = 5,
   filter_seq_mb_equiv                   = 7,
   min_references                        = 2,
-  overlap_method_equiv_cnv_call_merge   = "reciprocal",
-  overlap_method_equiv_cnv_after_filter = "reciprocal",
   parallel                              = FALSE,
   cores                                 = 1L,
   clique_mode_consistent                = "connected",
