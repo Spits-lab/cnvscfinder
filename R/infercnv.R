@@ -215,15 +215,6 @@ build_annotations_df <- function(cell_names, group_labels) {
 
 
 
-# =============================================================================
-# infercnv_make_objects.R
-# Functions to create inferCNV objects for within and across comparisons
-# =============================================================================
-
-BASE <- "C:/Users/pmgra/Documents/GitHub/Inferring_aneuploidy/R/"
-
-source(file.path(BASE, "Infercnv_utils.R"))
-
 
 # =============================================================================
 # INTERNAL: single object builders

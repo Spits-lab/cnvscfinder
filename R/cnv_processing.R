@@ -282,7 +282,7 @@ filt_remove_refs_cells <- function(df, metadata, filter_seq_mb, mode) {
 #'   Default is 100000.
 #'
 #' @return A data frame of merged CNV regions.
-merge_nearby_regions <- function(df, max_gap = 100000L, debug = FALSE) {
+merge_nearby_regions <- function(df, max_gap = 100000L) {
   # ---- Input validation ---------------------------------------------------
   required <- c("reference", "cell_name", "chr", "state", "start", "stop")
   if (!all(required %in% colnames(df))) {
@@ -336,12 +336,14 @@ merge_nearby_regions <- function(df, max_gap = 100000L, debug = FALSE) {
   ))
   
   # Check 2: warn if merging produced no reduction
-  warning(sprintf(
-    "No reduction after merging: before = %d, after = %d. using the max_gap = %d.",
-    as.integer(n_postfilter),
-    as.integer(n_merged),
-    as.integer(max_gap)
-  ))
+  if (n_merged >= n_postfilter) {
+    warning(sprintf(
+      "No reduction after merging: before = %d, after = %d. using the max_gap = %d.",
+      as.integer(n_postfilter),
+      as.integer(n_merged),
+      as.integer(max_gap)
+    ))
+  }
   
   # Check 3: empty output guard
   if (n_merged == 0L) {
@@ -368,22 +370,7 @@ merge_nearby_regions <- function(df, max_gap = 100000L, debug = FALSE) {
     stop("Merged segments with n_segments < 1 detected. Check summarise logic.")
   }
   
-  # Check 7: overlap detection 
-  if (debug) {
-    overlap <- merged_df |>
-      dplyr::group_by(reference, cell_name, chr, cnv_state) |>
-      dplyr::mutate(overlaps_prev = start <= dplyr::lag(end)) |>
-      dplyr::filter(!is.na(overlaps_prev) & overlaps_prev)
-    
-    if (nrow(overlap) > 0L) {
-      stop(sprintf(
-        "%d overlapping segment pair(s) detected after merging. Check merging logic.",
-        nrow(overlap)
-      ))
-    }
-    message("Debug: no overlapping segments detected after merging.")
-  }
- 
+  
   merged_df
 }
 
@@ -660,9 +647,9 @@ assign_cnv_equivalence <- function(
     
     if (n_rows_postfilter == 0L) {
       stop(sprintf(
-        "No segments remain after length filter (> %.0f Mb). ",
-        "Consider lowering filter_seq_mb (currently %.0f).",
-        filter_seq_mb, filter_seq_mb
+        "No segments remain after length filter (> %.0f Mb). Consider lowering filter_seq_mb (currently %.0f).",
+        filter_seq_mb,
+        filter_seq_mb
       ))
     }
   }
@@ -1187,7 +1174,7 @@ run_fast_cnv_pipeline <- function(
     mode = "within",
     metadata 
 ) {
-  
+  browser()
   message("→ Collapsing genes to segments")
   segments <- collapse_genes_to_cnv_segments(gene_cnv_df = gene_level_df)
   

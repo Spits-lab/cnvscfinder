@@ -382,7 +382,7 @@ run_full_cnv_pipeline <- function(
           "  Processing mode='within', cell_type='%s'", ct_name
         ))
         
-        # ct_df is already a data frame — pass directly
+        browser()
         # no load_and_prepare_infercnv_reference needed
         run_fast_cnv_pipeline(
           gene_level_df                         = ct_df,
@@ -453,7 +453,6 @@ run_full_cnv_pipeline <- function(
       purrr::compact() |>
       dplyr::bind_rows()
     
-    browser()
     if (nrow(supported_events) == 0L) {
       stop("No supported events after block2 — check pipeline parameters.")
     }

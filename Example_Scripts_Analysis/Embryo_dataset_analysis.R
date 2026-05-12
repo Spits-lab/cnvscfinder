@@ -13,14 +13,13 @@
 #Now the working directory will be the folder that this RScript is located
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
-source("~/GitHub/Inferring_aneuploidy/R/Functions_Processing_InferCNV.R")
-source("~/GitHub/Inferring_aneuploidy/R/Score_system.R")
-source("~/GitHub/Inferring_aneuploidy/R/GSVA.R")
-source("~/GitHub/Inferring_aneuploidy/R/GSEA.R")
+source("~/GitHub/Inferring_aneuploidy/R/cnv_annotation.R")
+source("~/GitHub/Inferring_aneuploidy/R/cnv_processing.R")
+source("~/GitHub/Inferring_aneuploidy/R/cnv_scoring.R")
+source("~/GitHub/Inferring_aneuploidy/R/gsva_gsea.R")
+source("C:/Users/pmgra/Documents/GitHub/Inferring_aneuploidy/R/infercnv.R")
+source("C:/Users/pmgra/Documents/GitHub/Inferring_aneuploidy/R/pipeline.R")
 
-source("C:/Users/pmgra/Documents/GitHub/Inferring_aneuploidy/R/Infercnv_utils.R")
-source("C:/Users/pmgra/Documents/GitHub/Inferring_aneuploidy/R/Infercnv_run.R")
-source("C:/Users/pmgra/Documents/GitHub/Inferring_aneuploidy/R/Infercnv_make_objects.R")
 
 
 

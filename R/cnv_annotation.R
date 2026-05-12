@@ -102,7 +102,7 @@ classify_cnv_arms <- function(cnv_df, chromosome_arms) {
   
   if (nrow(cnv_df) == 0L) {
     warning("cnv_df is empty — returning with arm_class column set to NA.")
-    cnv_df$arm_class <- NA_character_
+    cnv_df$arm_class <- character(0)
     return(cnv_df)
   }
   
@@ -221,16 +221,29 @@ add_chromosome_info <- function(main_df,
     stop("Missing required CNV coordinate columns.")
   }
   
-  cnv_df <- classify_cnv_arms(main_df, chromosome_arms)
-  
-  missing_chr <- setdiff(cnv_df$chr,chromosome_arms$chr)
-  
-  if (any(missing_chr)) {
-    message(message("Skipping chromosomes which are not present in cnv_df: ", paste(missing_chr, collapse = ", ")))
+  if (chr_col != "chr" || start_col != "start" || end_col != "end") {
+    main_df <- main_df |>
+      dplyr::rename(
+        chr   = dplyr::all_of(chr_col),
+        start = dplyr::all_of(start_col),
+        end   = dplyr::all_of(end_col)
+      )
   }
   
-  cnv_df <- cnv_df %>%
-    filter(chr %in% chromosome_arms$chr)
+  
+  cnv_df <- classify_cnv_arms(main_df, chromosome_arms)
+  
+  missing_chr <- setdiff(cnv_df$chr, chromosome_arms$chr)
+  
+  if (length(missing_chr) > 0L) {
+    message(
+      "Skipping chromosomes not present in chromosome_arms: ",
+      paste(missing_chr, collapse = ", ")
+    )
+  }
+  
+  cnv_df <- cnv_df |>
+    dplyr::filter(chr %in% chromosome_arms$chr)
   
   whole_chr_info <- calculate_cnv_arm_percentages(cnv_df, chromosome_arms)
   return(whole_chr_info) 
