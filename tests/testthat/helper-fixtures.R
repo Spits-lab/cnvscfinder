@@ -55,13 +55,33 @@ make_mock_segments <- function() {
 make_mock_metadata <- function() {
   data.frame(
     cell_name   = c("E5.5.101", "E5.5.100", "E6.2.114",
-                    "E6.2.104", "E6.2.107"),
-    cell_type   = c("TE", "TE", "TE", "TE", "TE"),
-    split_group = c("A",  "A",  "A",  "A",  "A"),
-    embryo      = c("E5.5", "E5.5", "E6.2", "E6.2", "E6.2"),
+                    "E6.2.104", "E6.2.107", "E7.2.166"),
+    cell_type   = c("TE",       "TE",       "Epiblast",
+                    "Epiblast", "Epiblast", "TE"),
+    split_group = c("A",       "B",        "A",
+                    "B",       "C",        "A"),
+    embryo      = c("E5.5",     "E5.5",     "E6.2",
+                    "E6.2",     "E6.2",     "E7.2"),
     stringsAsFactors = FALSE
   )
 }
+
+
+
+make_mock_pipeline_metadata <- function() {
+  data.frame(
+    cell_name  = c("E5.5.101", "E5.5.100", "E6.2.114",
+                   "E6.2.104", "E6.2.107", "E7.2.166"),
+    cell_type  = c("TE",       "TE",       "Epiblast",
+                   "Epiblast", "Epiblast", "TE"),
+    embryo     = c("E5.5",     "E5.5",     "E6.2",
+                   "E6.2",     "E6.2",     "E7.2"),
+    split_group = c("A",       "B",        "A",
+                    "B",       "C",        "A"),
+    stringsAsFactors = FALSE
+  )
+}
+
 
 
 make_mock_gene_level <- function() {
@@ -284,6 +304,172 @@ make_scenario_single_ref <- function() {
 }
 
 
+make_mock_clustered_events <- function() {
+  data.frame(
+    cell_name             = c("E5.10.945", "E5.10.949", "E5.10.945",
+                              "E5.10.949", "E5.10.934", "E5.10.936"),
+    chr                   = c("chr1",  "chr1",  "chr19",
+                              "chr19", "chrX",  "chrX"),
+    cnv_state             = c("loss",  "loss",  "gain",
+                              "gain",  "gain",  "gain"),
+    start                 = c(231223763L, 231332753L, 301444L,
+                              301444L,    117897813L, 13035618L),
+    end                   = c(248919946L, 248919946L, 8577577L,
+                              10115372L,  149000663L, 99721158L),
+    cnv_length            = c(17696184L,  17587194L,  8276134L,
+                              9813929L,   31102851L,  86685541L),
+    cnv_length_mb         = c(17.7,       17.6,       8.3,
+                              9.8,        31.1,       86.7),
+    n_references          = c(2L, 2L, 2L, 2L, 2L, 2L),
+    references            = c("A,B", "A,B", "A,B", "A,B", "A,B", "A,B"),
+    mode                  = c("within", "within", "within",
+                              "within", "within", "within"),
+    cell_type             = c("TE", "TE", "TE", "TE", "TE", "TE"),
+    embryo                = c("E5.10", "E5.10", "E5.10",
+                              "E5.10", "E5.10", "E5.10"),
+    split_group           = c("C", "C", "C", "C", "C", "C"),
+    arm_class             = c("q_arm",       "q_arm",       "p_arm",
+                              "p_arm",       "q_arm",       "p_centromere_q"),
+    whole_chromosome_gain = c(NA,    NA,    14.12, 16.74, 19.93, 55.55),
+    whole_chromosome_loss = c(7.11,  7.06,  NA,    NA,    NA,    NA),
+    p_arm_gain            = c(NA,    NA,    33.78, 40.06, NA,    NA),
+    p_arm_loss            = c(NA,    NA,    NA,    NA,    NA,    NA),
+    q_arm_gain            = c(NA,    NA,    NA,    NA,    33.22, NA),
+    q_arm_loss            = c(14.27, 14.18, NA,    NA,    NA,    NA),
+    cnv_equiv_id          = c("E5.10|chr1|loss|1",  "E5.10|chr1|loss|1",
+                              "E5.10|chr19|gain|1", "E5.10|chr19|gain|1",
+                              "E5.10|chrX|gain|1",  "E5.10|chrX|gain|2"),
+    stringsAsFactors = FALSE
+  )
+}
+
+make_mock_locus_summary <- function() {
+  data.frame(
+    embryo        = c("E5.10",             "E5.10",              "E5.10",             "E5.10"),
+    cnv_equiv_id  = c("E5.10|chr1|loss|1", "E5.10|chr19|gain|1", "E5.10|chrX|gain|1", "E5.10|chrX|gain|2"),
+    chr           = c("chr1",  "chr19", "chrX",  "chrX"),
+    cnv_state     = c("loss",  "gain",  "gain",  "gain"),
+    locus_start   = c(231223763L, 301444L,    117897813L, 13035618L),
+    locus_end     = c(248919946L, 10115372L,  149000663L, 99721158L),
+    locus_width   = c(17696184L,  9813929L,   31102851L,  86685541L),
+    locus_width_mb = c(17.7,      9.8,        31.1,       86.7),
+    n_events      = c(2L, 2L, 1L, 1L),
+    n_cells       = c(2L, 2L, 1L, 1L),
+    n_samples     = c(1L, 1L, 1L, 1L),
+    stringsAsFactors = FALSE
+  )
+}
+
+
+make_mock_cell_sizes <- function() {
+  data.frame(
+    embryo        = c("E5.10", "E5.11", "E6.2"),
+    n_total_cells = c(20L,     15L,     25L),
+    stringsAsFactors = FALSE
+  )
+}
+
+
+make_mock_thresholded <- function() {
+  df <- make_mock_clustered_events()
+  df$n_total_cells       <- 20L
+  df$tier                <- c("tier_2", "tier_2", "below_threshold",
+                              "below_threshold", "tier_1", "tier_1")
+  df$effective_threshold <- c(5L, 5L, NA, NA, 3L, 3L)
+  df
+}
+
+
+
+make_mock_prepare_input <- function() {
+  data.frame(
+    cnv_equiv_id  = c("E5.10|chr1|loss|1",  "E5.10|chr19|gain|1",
+                      "E5.10|chrX|gain|1",  "E5.10|chrX|gain|2"),
+    embryo        = c("E5.10", "E5.10", "E5.10", "E5.10"),
+    cnv_length_mb = c(17.7,    9.8,     31.1,    86.7),
+    n_cells       = c(2L,      2L,      1L,      1L),
+    n_total_cells = c(20L,     20L,     20L,     20L),
+    stringsAsFactors = FALSE
+  )
+}
+
+
+make_mock_cell_sizes <- function() {
+  data.frame(
+    embryo        = c("E5.10", "E5.11", "E6.2"),
+    n_total_cells = c(20L,     15L,     25L),
+    stringsAsFactors = FALSE
+  )
+}
+
+
+
+
+# ============================================================================
+# inferCNV fixtures
+# ============================================================================
+
+# Mock expression matrix — genes x cells (sparse-like, use regular matrix)
+make_mock_expr_matrix <- function() {
+  genes <- c("DDX11L1", "WASH7P", "MIR6723", "GENE4", "GENE5")
+  cells <- c("E5.5.101", "E5.5.100", "E6.2.114", "E6.2.104")
+  
+  mat <- matrix(
+    data     = c(0.0, 0.0, 0.0, 0.0,
+                 0.0, 0.0, 0.0, 0.0,
+                 0.0, 3.0, 3.0, 2.0,
+                 1.5, 1.5, 1.5, 1.5,
+                 0.8, 0.8, 1.2, 1.2),
+    nrow     = 5,
+    ncol     = 4,
+    dimnames = list(genes, cells)
+  )
+  mat
+}
+
+# Mock gene order — matches real structure: rownames=gene, cols=chr/start/stop
+make_mock_gene_order <- function() {
+  df <- data.frame(
+    chr   = c("chr1",   "chr1",   "chr1",   "chr15",  "chr15"),
+    start = c(11869L,   14404L,   632325L,  1000000L, 2000000L),
+    stop  = c(14409L,   29570L,   632413L,  1500000L, 2500000L),
+    row.names = c("DDX11L1", "WASH7P", "MIR6723", "GENE4", "GENE5"),
+    stringsAsFactors = FALSE
+  )
+  df
+}
+
+# Mock long format — output of melt_expr_to_long
+make_mock_long_df <- function() {
+  data.frame(
+    gene      = c("MIR6723", "MIR6723", "MIR6723", "MIR6723",
+                  "GENE4",   "GENE4",   "GENE4",   "GENE4"),
+    cell_name = c("E5.5.101", "E5.5.100", "E6.2.114", "E6.2.104",
+                  "E5.5.101", "E5.5.100", "E6.2.114", "E6.2.104"),
+    state_raw = c(0.0,  3.0,  3.0,  2.0,
+                  1.5,  1.5,  1.5,  1.5),
+    stringsAsFactors = FALSE
+  )
+}
+
+# Mock infercnv_list — input to load_and_prepare_infercnv_reference
+# Each element is list(expr_matrix, gene_order)
+make_mock_infercnv_list <- function() {
+  list(
+    A = list(make_mock_expr_matrix(), make_mock_gene_order()),
+    B = list(make_mock_expr_matrix(), make_mock_gene_order()),
+    C = list(make_mock_expr_matrix(), make_mock_gene_order())
+  )
+}
+
+# Mock metadata for validate_metadata and make_splits
+make_mock_infercnv_metadata <- function() {
+  data.frame(
+    cell_name = c("E5.5.101", "E5.5.100", "E6.2.114", "E6.2.104"),
+    cell_type = c("TE",       "TE",       "Epiblast", "Epiblast"),
+    stringsAsFactors = FALSE
+  )
+}
 
 
 

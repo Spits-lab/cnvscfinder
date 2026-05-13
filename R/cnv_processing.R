@@ -1174,7 +1174,6 @@ run_fast_cnv_pipeline <- function(
     mode = "within",
     metadata 
 ) {
-  browser()
   message("→ Collapsing genes to segments")
   segments <- collapse_genes_to_cnv_segments(gene_cnv_df = gene_level_df)
   

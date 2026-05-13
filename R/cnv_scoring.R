@@ -386,9 +386,16 @@ make_tier_definitions <- function(
       warning("n_cells ignored when selected mode is 'fractions'.")
     }
     
+    
     if (!is.null(fractions)) {
       
-      # Manual fractions supplied — validate
+      if (!is.numeric(fractions)) {
+        stop(
+          "fractions must be a numeric vector. ",
+          "Got: ", class(fractions)
+        )
+      }
+
       if (any(fractions <= 0) || any(fractions >= 1)) {
         stop(
           "All fractions must be in (0, 1).\n",
@@ -396,17 +403,50 @@ make_tier_definitions <- function(
         )
       }
       
-      if (!all(diff(fractions) > 0)) {
-        stop(
-          "fractions must be strictly increasing — ",
-          "tier 1 (largest CNVs) should have the smallest fraction.\n",
+      
+      if (!is.null(fractions) && !all(diff(fractions) > 0)) {
+        warning(
+          "fractions were not strictly increasing — sorting automatically.\n",
           "  Got: ", paste(round(fractions, 4), collapse = ", ")
         )
+        fractions <- sort(fractions)
       }
+      
       n_tiers <- length(fractions)
       
+      if (any(fractions >= 0.25)) {
+        warning(paste(
+          "High fraction detected:",
+          paste(round(fractions[fractions >= 0.25], 3), collapse = ", "),
+          "Thresholds above 25%% of cells may produce empty results ",
+          "for small datasets or low purity samples."
+        ))
+      }
+      n_tiers <- length(fractions)
     } else {
       n_tiers <- length(boundaries_mb)
+
+      
+      if (!is.numeric(base_fraction) || length(base_fraction) != 1L) {
+        stop("base_fraction must be a single numeric value.")
+      }
+      if (base_fraction <= 0 || base_fraction >= 1) {
+        stop(sprintf(
+          "base_fraction must be in (0, 1). Got: %.4f", base_fraction
+        ))
+      }
+      
+      if (!is.numeric(step) || length(step) != 1L) {
+        stop("step must be a single numeric value. Got: ", class(step))
+      }
+      
+      if (step <= 0) {
+        stop("step must be positive. Got: ", step)
+      }
+      if (step >= 1) {
+        stop("step must be less than 1. Got: ", step)
+      }
+      
       # Auto-generate fractions from base + step
       fractions <- base_fraction + (0:(n_tiers - 1)) * step
       
@@ -417,15 +457,24 @@ make_tier_definitions <- function(
         ))
       }
       
+      if (any(fractions >= 0.25)) {
+        warning(paste(
+          "High fraction detected:",
+          paste(round(fractions[fractions >= 0.25], 3), collapse = ", "),
+          "Thresholds above 25%% of cells may produce empty results ",
+          "for small datasets or low purity samples."
+        ))
       
-    } 
+      
+      }}
+    
     out <- data.frame(
       tier        = paste0("tier_", seq_len(n_tiers)),
       boundaries_mb = boundaries_mb,
       fraction    = fractions,
       stringsAsFactors = FALSE
     ) 
-  } else if(mode == "number"){
+  }  else if(mode == "number"){
     
     if (!is.null(fractions)) {
       warning("fractions ignored when mode = 'number'.")
@@ -435,7 +484,14 @@ make_tier_definitions <- function(
       stop("n_cells must be provided when mode = 'number'.")
     }
     
-    n_tier <- length(n_cells)
+    if (!is.numeric(n_cells)) {
+      stop(
+        "n_cells must be a numeric vector. ",
+        "Got: ", class(n_cells)
+      )
+    }
+    
+    n_tiers <- length(n_cells) 
     
     if (any(n_cells < 1L)) {
       stop("n_cells values must be >= 1.")
@@ -450,12 +506,11 @@ make_tier_definitions <- function(
     }
     
     out <- data.frame(
-      tier        = paste0("tier_", seq_len(n_tiers)),
+      tier          = paste0("tier_", seq_len(n_tiers)),
       boundaries_mb = boundaries_mb,
-      n_cells     = as.integer(n_cells),
+      n_cells       = as.integer(n_cells),
       stringsAsFactors = FALSE
     )
-    
   }
   
   # ---- Report -------------------------------------------------------------
@@ -493,6 +548,10 @@ resolve_tier_thresholds <- function(method = c("auto", "single", "manual"),
   
   method <- match.arg(method)
   mode   <- match.arg(mode)
+  
+  if (length(boundaries_mb) > 2L) {
+    stop("A maximum of 2 boundaries is accepted")
+  }
   
   # ---- Method dispatch ----------------------------------------------------
   if (method == "automated") {
@@ -663,6 +722,7 @@ score_cnv_clusters <- function(
   threshold_method <- match.arg(threshold_method)
   threshold_mode <- match.arg(threshold_mode)
   
+
   # ---- Step 1: prepare thresholds — merge only if needed ------------------
   thresholded_df <- prepare_cnv_thresholds(
     summary_df        = summary_df,

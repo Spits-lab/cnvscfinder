@@ -238,6 +238,7 @@ run_full_cnv_pipeline <- function(
   cores                                 = 1L,
   clique_mode_consistent                = "connected",
   removed_log_return                    = FALSE,
+  supported_events = NULL,
   
   # ---- Block 3 -----------------------------------------------------------
   chromosome_arms   = NULL,
@@ -382,7 +383,6 @@ run_full_cnv_pipeline <- function(
           "  Processing mode='within', cell_type='%s'", ct_name
         ))
         
-        browser()
         # no load_and_prepare_infercnv_reference needed
         run_fast_cnv_pipeline(
           gene_level_df                         = ct_df,

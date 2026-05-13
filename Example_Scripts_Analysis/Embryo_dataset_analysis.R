@@ -72,6 +72,14 @@ obj_list <- make_infercnv_objects(
 
 metadata <- obj_list$within_cell_type[["split_metadata"]]
 
+dim(obj_list$within_cell_type$objects$TE[["A"]]@expr.data)
+obj_list$within_cell_type$objects$TE[["A"]]@expr.data[1:3,1:3]
+colnames(obj_list$within_cell_type$objects$TE[["A"]]@expr.data)
+
+head(obj_list$within_cell_type$objects$TE[["A"]]@gene_order, 3)
+colnames(obj_list$within_cell_type$objects$TE[["A"]]@gene_order)
+
+
 cell_sizes <- compute_cell_sizes(
   metadata,
   group_cols = "embryo",
