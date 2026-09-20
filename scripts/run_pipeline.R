@@ -264,6 +264,7 @@ optparse::make_option(
     help    = "Number of cores when parallel = TRUE [default: %default]"
   ),
   
+  
   # ---- Block 3 ------------------------------------------------------------
   optparse::make_option(
     "--group-cols",
@@ -277,7 +278,27 @@ optparse::make_option(
     default = NULL,
     help    = "Path to chromosome arms RDS. If NULL uses hg38 built-in [default: %default]"
   ),
-  
+  optparse::make_option(
+  "--range",
+  type    = "double",
+  default = 0.15,
+  help    = paste(
+    "Range of adaptive overlap threshold.",
+    "Only used when --overlap-method=adaptive.",
+    "Overlap varies from min_overlap-range/2 (large)",
+    "to min_overlap+range/2 (small) [default: %default]"
+  )
+),
+optparse::make_option(
+  "--max-mb",
+  type    = "double",
+  default = 120,
+  help    = paste(
+    "Maximum segment size (Mb) for adaptive overlap.",
+    "Segments >= max_mb get most lenient threshold.",
+    "[default: %default]"
+  )
+),
   # ---- Block 4 ------------------------------------------------------------
     optparse::make_option(
     "--by-col",
@@ -489,6 +510,9 @@ opt$`p-arm-permission`              <- as.double(opt$`p-arm-permission`)
 opt$`q-arm-permission`              <- as.double(opt$`q-arm-permission`)
 opt$`whole-chr-permission`          <- as.double(opt$`whole-chr-permission`)
 k_interval                          <- as.double(opt$`k-interval`)
+opt$`range`                         <- as.double(opt$`range`)
+opt$`max-mb`                        <- as.double(opt$`max-mb`)
+
 
 opt$`min-coding-density` <- as.double(opt$`min-coding-density`)
 opt$`max-gap-mb` <- as.double(opt$`max-gap-mb`)
@@ -523,10 +547,22 @@ check_no_na(opt$`k-value`,              "--k-value")
 check_no_na(opt$`sensitivity-floor-mb`, "--sensitivity-floor-mb")
 check_no_na(opt$`min-coding-density`, "--min-coding-density")
 check_no_na(opt$`max-gap-mb`, "--max-gap-mb")
+check_no_na(opt$`range`,              "--range")
+check_no_na(opt$`max-mb`,             "--max-mb") 
 
 
 cat("Type conversion complete\n")
 
+
+if (is.null(opt$`clonal-col`) ||
+    opt$`clonal-col` == "NULL") {
+  opt$`clonal-col` <- NULL
+}
+
+if (is.null(opt$`donor-col`) ||
+    opt$`donor-col` == "NULL") {
+  opt$`donor-col` <- NULL
+}
 
 
 # =============================================================================
@@ -675,7 +711,8 @@ message(paste0(
   "  FILTER_SEQ_MB_EQUIV:     ", opt$`filter-seq-mb-equiv`,       "\n",
   "  MIN_REFERENCES:          ", opt$`min-references`,            "\n",
   "  GROUP_COLS:              ", paste(group_cols, collapse = ", "), "\n",
-  "  K_VALUE_THRESHOLD:                 ", opt$`k-value`, "\n",
+  "  K_DISCRETE_VAlUE         ", k_interval, "\n",
+  "  K_FREQUENCY_THRESHOLD:                 ", opt$`k-value`, "\n",
   "  SENSITIVITY_FLOOR_MB:    ", opt$`sensitivity-floor-mb`, "\n",
   "  MIN_REQUIRED_CELLS:      ", opt$`min-required-cells`, "\n",
   "  BY_COL:                  ", paste(by_col %||% "NULL", collapse = ", "), "\n",
@@ -685,7 +722,10 @@ message(paste0(
   "  Q_ARM_PERMISSION:        ", opt$`q-arm-permission`,   "%\n",
   "  WHOLE_CHR_PERMISSION:    ", opt$`whole-chr-permission`, "%\n",
   "  MIN_OVERLAP:             ", opt$`min-overlap`,               "\n",
-   " OVERLAP METHOD:          ", opt$`overlap-method`,           "\n",
+  "  OVERLAP METHOD:          ", opt$`overlap-method`,           "\n",
+  "  RANGE FOR OVERLAPING:    ",opt$`range`,"\n",
+  "  Segment Size tolerance:  ",opt$`max-mb`, "\n",
+   
   "============================="
 ))
 
@@ -739,6 +779,10 @@ results <- run_full_cnv_pipeline(
   max_gap_mb                = opt$`max-gap-mb`,
   coding_gr                 = coding_gr,
   coding_expressed_set      = coding_expressed_set,
+  
+    # ── adaptive overlap ──────────────────────────────
+  range                        = opt$`range`,  
+  max_mb                       = opt$`max-mb`, 
   
   # ---- Block 3 ─────────────────────────────────────────────────────────────
   chromosome_arms = chromosome_arms,
