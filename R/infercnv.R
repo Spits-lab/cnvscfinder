@@ -1,15 +1,3 @@
-#' @title infercnv
-#'
-#' @description
-#' 
-#' Functions that focus on the preparation or the processing of data to be runned through CNV
-#' 
-#' @author Pedro Granjo
-#' @date 02-09-2026
-#'
-
-
-
 #' Validate metadata for inferCNV pipeline
 #'
 #' @param metadata     data.frame with at least cell_name and group_col
@@ -173,7 +161,7 @@ make_splits <- function(
   if (n_splits > 26) stop("n_splits cannot exceed 26.")
   
   labels <- LETTERS[seq_len(n_splits)]
-  
+
   # ── Subset metadata ────────────────────────────────────────────────────────
   sub <- metadata[
     metadata[[group_col]] == subset_group_val, ,
@@ -796,7 +784,7 @@ build_annotations_df <- function(cell_names, group_labels) {
       if (number_of_cells >= 100) {
         
         message("\nGroup cell: ", ct)
-        
+
         # Split cells for this group
         split_meta <- make_splits(
           metadata      = metadata,
@@ -848,7 +836,7 @@ build_annotations_df <- function(cell_names, group_labels) {
         message(sprintf(
           "\nCell Group: %s skipped — low cells (%d)",
           ct, number_of_cells))
-        
+       
         group_clusters <<- group_clusters[
           !(group_clusters == ct)]
       }
@@ -1154,7 +1142,7 @@ run_infercnv_objects <- function(infercnv_obj_list,
       type_objects <- mode_objects[[cell_group]]
       
       for (comp in names(type_objects)) {
-        
+      
         infer_obj <- type_objects[[comp]]
         
         # NULL guard — object may have failed during creation

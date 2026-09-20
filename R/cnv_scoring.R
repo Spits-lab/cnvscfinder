@@ -1,11 +1,11 @@
-#' @title cnv_scoring
+#' @title Score_system
 #'
 #' @description
 #' 
 #' Functions that perform further processing from the CNV performing a final filtering and Confidence Score in a Single Tool Approach
 #' 
 #' @author Pedro Granjo
-#' @date 02-09-2026
+#' @date 13-03-2026
 #'
 
 
@@ -72,7 +72,7 @@ invisible(lapply(all_packages, function(pkg) {
 #' @param by Character vector specifying grouping columns (e.g. dataset,
 #' sample, or patient).
 #' @param cluster_mode Clustering strategy passed to `cluster_cnv_events()`.
-#' @param min_ovelap Minimum reciprocal overlap threshold.
+#' @param min_overlap Minimum reciprocal overlap threshold.
 #'
 #' @details
 #' The function splits the input data frame according to the grouping
@@ -80,7 +80,11 @@ invisible(lapply(all_packages, function(pkg) {
 #'
 #' @return
 #' Data frame with clustered CNV events including the `cnv_equiv_id` column.
-cluster_cnv_events_by <- function(df, by = NULL, overlap_method = "reciprocal", min_ovelap = 0.75, parallel = F, n_cores = 1L){
+cluster_cnv_events_by <- function(df, by = NULL, overlap_method = "reciprocal", min_overlap = 0.75, 
+                range                = 0.15,
+                sensitivity_floor_mb = 20,
+                max_mb               = 120,
+            parallel = F, n_cores = 1L){
   
   cols_to_remove <- intersect(c("merge_group_id", "cnv_equiv_id"), colnames(df))
   
@@ -112,14 +116,18 @@ cluster_cnv_events_by <- function(df, by = NULL, overlap_method = "reciprocal", 
   
   res <- assign_cnv_equivalence(
     df,
-    min_overlap = min_ovelap,
+    min_overlap = min_overlap,
     overlap_method         = overlap_method,
     filter_seq_mb          = 0,
     parallel               = parallel,
     by_columns = by_columns,
+    range                = range,
+    sensitivity_floor_mb = sensitivity_floor_mb,
+    max_mb               = max_mb,
     n_cores = n_cores
   )
   
+
   return(res)
 }
   
@@ -205,7 +213,7 @@ summarise_cnv_loci <- function(df, by = NULL,
 #'
 #' @param df Data frame containing CNV events.
 #' @param by Optional grouping variables.
-#' @param min_ovelap Minimum reciprocal overlap threshold.
+#' @param min_overlap Minimum reciprocal overlap threshold.
 #' @param cluster_mode Clustering strategy ("connected" or "complete").
 #' @param sample_col Column identifying samples.
 #'
@@ -218,11 +226,14 @@ summarise_cnv_loci <- function(df, by = NULL,
 run_cnv_locus_analysis <- function(
     df,
     by               = NULL,
-    min_ovelap       = 0.75,
+    min_overlap       = 0.75,
     sample_col,
     cell_col,
     overlap_method   = "reciprocal",
     parallel         = FALSE,
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb               = 120,
     n_cores          = 1L,
     removed_log_retur = FALSE) {
   
@@ -231,8 +242,11 @@ run_cnv_locus_analysis <- function(
     df             = df,
     by             = by,
     overlap_method = overlap_method,
-    min_ovelap     = min_ovelap,
+    min_overlap     = min_overlap,
     parallel       = parallel,
+    range                = range,
+    sensitivity_floor_mb = sensitivity_floor_mb,
+    max_mb               = max_mb,
     n_cores        = n_cores
   )
   clustered_table_with_equiv_id <- clustered$results_id
@@ -856,7 +870,7 @@ prepare_cnv_thresholds <- function(
       size_factor          = cnv_length_mb / sensitivity_floor_mb,
       group_threshold       = k * sqrt(n_total_cells),
       effective_threshold = dplyr::case_when(
-      cnv_length_mb >= 110 ~ 1L,
+      cnv_length_mb >= 100 ~ 1L,
       TRUE ~ round_fun(
         pmax(min_required_cells, group_threshold / size_factor)
       )
@@ -930,6 +944,23 @@ score_cnv_clusters <- function(
     q_arm_permission     = q_arm_permission,
     whole_chr_permission = whole_chr_permission
   )
+  
+   if (is.null(filtered_df) ||
+      nrow(filtered_df) == 0L) {
+    
+    message(paste0(
+      "score_cnv_clusters: all rows removed ",
+      "by filter_cnv_loci.\n",
+      "  Returning pre-filter result ",
+      "(thresholded_df) to avoid empty output.\n",
+      "  Consider adjusting:\n",
+      "  p_arm_permission     = ", p_arm_permission, "\n",
+      "  q_arm_permission     = ", q_arm_permission, "\n",
+      "  whole_chr_permission = ", whole_chr_permission
+    ))
+    return(thresholded_df)
+  }
+  
   
   scored_std <- standardise_cluster_boundaries(
     clustered_events = filtered_df,

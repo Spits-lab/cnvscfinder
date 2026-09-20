@@ -1,16 +1,3 @@
-#' @title pipeline
-#'
-#' @description
-#' 
-#' Functions that centralise all steps of the reference-independent
-#' single-cell CNV karyotyping pipeline. The pipeline is organised
-#' into four sequential parts that represent the 4 major processing steps which the current pipeline performs
-#'
-#' @author Pedro Granjo
-#' @date 02-09-2026
-#' 
-#' 
-
 compute_cell_sizes <- function(
     metadata,
     group_cols,
@@ -148,7 +135,11 @@ process_tool_cnv_runs <- function(
     pct_floor            = 30,
     min_expr_density     = 1.5,
     min_coding_density   = 1.0,
-    max_gap_mb           = 10
+    max_gap_mb           = 10,
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb = 120 
+    
 ) {
   
   # ---- Validate base_dir --------------------------------------------------
@@ -229,7 +220,10 @@ process_tool_cnv_runs <- function(
       pct_max              = pct_max,
       pct_floor            = pct_floor,
       min_coding_density   = min_coding_density,
-      max_gap_mb           = max_gap_mb
+      max_gap_mb           = max_gap_mb,
+      range                = range,
+      sensitivity_floor_mb = sensitivity_floor_mb,
+      max_mb  = max_mb
       )
      
     
@@ -946,7 +940,7 @@ run_full_cnv_pipeline <- function(
     resume_if_exists  = TRUE,
     tool_outdir = NULL,
     k_discrete = 1.5,
-    remove_ref = T,
+    remove_ref = F,
     clonal_col = NULL,
     donor_col = NULL,
     # ---- Block 2 -----------------------------------------------------------
@@ -964,6 +958,8 @@ run_full_cnv_pipeline <- function(
     removed_log_return                    = FALSE,
     min_coding_density   = 1.0,
     max_gap_mb           = 10,
+    range                                 = 0.15,
+    max_mb                                = 120,
     
     # ---- Block 3 -----------------------------------------------------------
     supported_events  = NULL,
@@ -1163,8 +1159,8 @@ run_full_cnv_pipeline <- function(
     filter_seq_mb_init                    = filter_seq_mb_init,
     filter_seq_mb_equiv                   = filter_seq_mb_equiv,
     min_references                        = min_references,
-    overlap_method_equiv_cnv_call_merge   = overlap_method,
-    overlap_method_equiv_cnv_after_filter = overlap_method,
+    overlap_method_equiv_cnv_call_merge   = "reciprocal",
+    overlap_method_equiv_cnv_after_filter = "reciprocal",
     parallel                              = parallel,
     cores                                 = cores,
     clique_mode_consistent                = clique_mode_consistent,
@@ -1180,7 +1176,11 @@ run_full_cnv_pipeline <- function(
     pct_floor                 = pct_floor,
     min_expr_density          = min_expr_density,
     min_coding_density        = min_coding_density,
-    max_gap_mb                = max_gap_mb)
+    max_gap_mb                = max_gap_mb,
+    range                = range,
+    sensitivity_floor_mb = sensitivity_floor_mb,
+    max_mb  = max_mb
+    )
   })
       
     } else {
@@ -1196,8 +1196,8 @@ run_full_cnv_pipeline <- function(
         filter_seq_mb_init                    = sensitivity_floor_mb - 7.5,
         filter_seq_mb_equiv                   = 0,
         min_references                        = min_references,
-        overlap_method_equiv_cnv_call_merge   = overlap_method,
-        overlap_method_equiv_cnv_after_filter = overlap_method,
+        overlap_method_equiv_cnv_call_merge   = "reciprocal",
+        overlap_method_equiv_cnv_after_filter = "reciprocal",
         parallel                              = parallel,
         cores                                 = cores,
         clique_mode_consistent                = clique_mode_consistent,
@@ -1210,7 +1210,10 @@ run_full_cnv_pipeline <- function(
         pct_floor                 = pct_floor,
         min_expr_density     = min_expr_density,
         min_coding_density   = min_coding_density,
-        max_gap_mb           = max_gap_mb
+        max_gap_mb           = max_gap_mb,
+        range                = range,
+        sensitivity_floor_mb = sensitivity_floor_mb,
+        max_mb = max_mb 
       )
       
       if (is.null(full_results)) {
@@ -1394,7 +1397,10 @@ run_full_cnv_pipeline <- function(
       overlap_method = overlap_method,
       min_ovelap     = min_overlap,
       sample_col     = sample_col,
-      cell_col       = cell_col
+      cell_col       = cell_col,
+      range                = range,
+      sensitivity_floor_mb = sensitivity_floor_mb,
+      max_mb               = max_mb
     )
     
     scored_events <- score_cnv_clusters(

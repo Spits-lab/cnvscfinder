@@ -1,11 +1,11 @@
-#' @title cnv_processing
+#' @title Score_system
 #'
 #' @description
 #' 
 #' Functions that perform further processing from the CNV performing a final filtering and Confidence Score in a Single Tool Approach
 #' 
 #' @author Pedro Granjo
-#' @date 02-09-2026
+#' @date 13-03-2026
 #'
 
 
@@ -385,6 +385,78 @@ merge_nearby_regions <- function(df, max_gap = 100000L) {
 
 
 
+
+size_adaptive_overlap <- function(
+    seg_length_mb,
+    min_overlap          = 0.75, 
+    range                = 0.15, 
+    sensitivity_floor_mb = 20,
+    max_mb               = 120
+) {
+  # at max_mb:               min_overlap - range/2
+  # at sensitivity_floor_mb: min_overlap + range/2
+  
+  large_overlap <- min_overlap - range / 2
+  small_overlap <- min_overlap + range / 2
+  
+  pmax(
+    large_overlap,
+    pmin(
+      small_overlap,
+      small_overlap -
+        (small_overlap - large_overlap) *
+        (seg_length_mb - sensitivity_floor_mb) /
+        (max_mb        - sensitivity_floor_mb)
+    )
+  )
+}
+
+.adaptive_overlap <- function(
+    q_start, q_end,
+    s_start, s_end,
+    min_overlap          = 0.75,
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb               = 120
+) {
+  
+  q_len_mb <- (q_end - q_start + 1L) / 1e6
+  s_len_mb <- (s_end - s_start + 1L) / 1e6
+  
+  intersection_mb <- pmax(0,
+    (pmin(q_end, s_end) -
+     pmax(q_start, s_start) + 1L) / 1e6
+  )
+  
+  threshold_q <- size_adaptive_overlap(
+    seg_length_mb        = q_len_mb,
+    min_overlap          = min_overlap,
+    range                = range,
+    sensitivity_floor_mb = sensitivity_floor_mb,
+    max_mb               = max_mb
+  )
+  
+  threshold_s <- size_adaptive_overlap(
+    seg_length_mb        = s_len_mb,
+    min_overlap          = min_overlap,
+    range                = range,
+    sensitivity_floor_mb = sensitivity_floor_mb,
+    max_mb               = max_mb
+  )
+  
+  overlap_pct_q <- intersection_mb / q_len_mb
+  overlap_pct_s <- intersection_mb / s_len_mb
+  
+  dplyr::if_else(
+    overlap_pct_q >= threshold_q &
+    overlap_pct_s >= threshold_s,
+    pmin(overlap_pct_q / threshold_q,
+         overlap_pct_s / threshold_s),
+    0
+  )
+}
+
+
 #' Compute pairwise overlap scores using a named strategy
 #'
 #' Acts as the single entry point for all overlap methods. Individual strategies
@@ -398,50 +470,68 @@ merge_nearby_regions <- function(df, max_gap = 100000L) {
 #'   One of "reciprocal", "jaccard", "symmetric_reciprocal".
 #'
 #' @return Numeric vector of overlap scores in [0, 1], same length as inputs.
-compute_overlap <- function(q_start, q_end, s_start, s_end, method = "reciprocal") {
+compute_overlap <- function(
+    q_start, q_end,
+    s_start, s_end,
+    method               = "reciprocal",
+    min_overlap          = 0.75,
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb               = 120
+) {
   
-  # --- Internal strategy definitions ---------------------------------------
-  # Each function shares the same signature and returns a numeric vector in [0,1]
-  # Add new strategies here as additional nested functions + registry entry
-  
-  .reciprocal <- function(q_start, q_end, s_start, s_end) {
-    intersection_len <- pmax(0L, pmin(q_end, s_end) - pmax(q_start, s_start) + 1L)
-    q_len            <- q_end - q_start + 1L
-    s_len            <- s_end - s_start + 1L
+  .reciprocal <- function(q_start, q_end,
+                          s_start, s_end) {
+    intersection_len <- pmax(0L, pmin(q_end, s_end) -
+                               pmax(q_start, s_start) + 1L)
+    q_len <- q_end - q_start + 1L
+    s_len <- s_end - s_start + 1L
     intersection_len / pmax(q_len, s_len)
   }
   
-  .jaccard <- function(q_start, q_end, s_start, s_end) {
-    intersection_len <- pmax(0L, pmin(q_end, s_end) - pmax(q_start, s_start) + 1L)
-    q_len            <- q_end - q_start + 1L
-    s_len            <- s_end - s_start + 1L
-    union_len        <- q_len + s_len - intersection_len
+  .jaccard <- function(q_start, q_end,
+                       s_start, s_end) {
+    intersection_len <- pmax(0L, pmin(q_end, s_end) -
+                               pmax(q_start, s_start) + 1L)
+    q_len     <- q_end - q_start + 1L
+    s_len     <- s_end - s_start + 1L
+    union_len <- q_len + s_len - intersection_len
     intersection_len / union_len
   }
   
-  .symmetric_reciprocal <- function(q_start, q_end, s_start, s_end) {
-    intersection_len <- pmax(0L, pmin(q_end, s_end) - pmax(q_start, s_start) + 1L)
-    q_len            <- q_end - q_start + 1L
-    s_len            <- s_end - s_start + 1L
-    (intersection_len / q_len + intersection_len / s_len) / 2
+  .symmetric_reciprocal <- function(q_start, q_end,
+                                    s_start, s_end) {
+    intersection_len <- pmax(0L, pmin(q_end, s_end) -
+                               pmax(q_start, s_start) + 1L)
+    q_len <- q_end - q_start + 1L
+    s_len <- s_end - s_start + 1L
+    (intersection_len / q_len +
+     intersection_len / s_len) / 2
   }
   
-  # --- Internal registry ---------------------------------------------------
-  # Maps method name strings to their corresponding internal functions
-  
+  # ── Registry ──────────────────────────────────────
   .registry <- list(
     reciprocal           = .reciprocal,
     jaccard              = .jaccard,
-    symmetric_reciprocal = .symmetric_reciprocal
+    symmetric_reciprocal = .symmetric_reciprocal,
+    adaptive             = function(q_start, q_end,
+                                    s_start, s_end) {
+      .adaptive_overlap(
+        q_start, q_end, s_start, s_end,
+        min_overlap          = min_overlap,
+        range                = range,
+        sensitivity_floor_mb = sensitivity_floor_mb,
+        max_mb               = max_mb
+      )
+    }
   )
   
-  # --- Validate and dispatch -----------------------------------------------
-  
-  valid_methods <- names(.registry)
-  if (!method %in% valid_methods) {
+  # ── Validate ──────────────────────────────────────
+  if (!method %in% names(.registry)) {
     stop(
       "Unknown overlap method: '", method, "'. ",
-      "Valid options are: ", paste(valid_methods, collapse = ", ")
+      "Valid options: ",
+      paste(names(.registry), collapse = ", ")
     )
   }
   
@@ -542,7 +632,13 @@ find_maximal_cliches <- function(q_pass, s_pass, grp){
 
 
 
-process_cnv_cluster <- function(grp,overlap_method,min_overlap){
+process_cnv_cluster <- function(grp,
+    overlap_method,
+    min_overlap, 
+    range = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb               = 120
+){
   
   n           <- nrow(grp)
 
@@ -575,12 +671,19 @@ process_cnv_cluster <- function(grp,overlap_method,min_overlap){
   s_idx <- S4Vectors::subjectHits(hits)
 
   scores <- compute_overlap(
-    q_start = grp$start[q_idx],
-    q_end   = grp$end[q_idx],
-    s_start = grp$start[s_idx],
-    s_end   = grp$end[s_idx],
-    method  = overlap_method
-  )
+  q_start              = grp$start[q_idx],
+  q_end                = grp$end[q_idx],
+  s_start              = grp$start[s_idx],
+  s_end                = grp$end[s_idx],
+  method               = overlap_method,
+  # ── adaptive params ─────────────────────────────
+  # only used when method = "adaptive"
+  # ignored by other methods ✅
+  min_overlap          = min_overlap,
+  range                = range,
+  sensitivity_floor_mb = sensitivity_floor_mb,
+  max_mb               = max_mb
+)
   
   passing <- scores >= min_overlap
   q_pass  <- q_idx[passing]
@@ -615,6 +718,9 @@ assign_cnv_equivalence <- function(
     filter_seq_mb          = 7,
     parallel               = FALSE,
     by_columns = c("cell_name", "chr", "cnv_state"),
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb               = 120,
     n_cores = 1L
 ) {
   
@@ -687,6 +793,9 @@ assign_cnv_equivalence <- function(
       process_cnv_cluster,
       overlap_method         = overlap_method,
       min_overlap = min_overlap,
+      range                = range,
+      sensitivity_floor_mb = sensitivity_floor_mb,
+      max_mb               = max_mb,
       BPPARAM = BiocParallel::MulticoreParam(workers = n_cores)
     )
   } else {
@@ -694,7 +803,10 @@ assign_cnv_equivalence <- function(
       group_indices,
       process_cnv_cluster,
       overlap_method         = overlap_method,
-      min_overlap = min_overlap
+      min_overlap = min_overlap,
+      range                = range,
+      sensitivity_floor_mb = sensitivity_floor_mb,
+      max_mb               = max_mb
     )
   }
   
@@ -932,7 +1044,10 @@ resolve_duplicate_overlaps <- function(
     consistent,
     min_overlap    = 0.6,
     overlap_method = "reciprocal",
-    clique_mode    = c("connected", "complete")
+    clique_mode    = c("connected", "complete"),
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb               = 120
 ) {
   
   clique_mode <- match.arg(clique_mode)
@@ -965,12 +1080,19 @@ resolve_duplicate_overlaps <- function(
   s_idx <- S4Vectors::subjectHits(hits)
   
   scores <- compute_overlap(
-    q_start = grp$start[q_idx],
-    q_end   = grp$end[q_idx],
-    s_start = grp$start[s_idx],
-    s_end   = grp$end[s_idx],
-    method  = overlap_method
-  )
+  q_start              = grp$start[q_idx],
+  q_end                = grp$end[q_idx],
+  s_start              = grp$start[s_idx],
+  s_end                = grp$end[s_idx],
+  method               = overlap_method,
+  # ── adaptive params ─────────────────────────────
+  # only used when method = "adaptive"
+  # ignored by other methods ✅
+  min_overlap          = min_overlap,
+  range                = range,
+  sensitivity_floor_mb = sensitivity_floor_mb,
+  max_mb               = max_mb
+)
   
   passing <- scores >= min_overlap
   q_pass  <- q_idx[passing]
@@ -1061,6 +1183,9 @@ resolve_shared_cliques <- function(
     overlap_method = "reciprocal",
     clique_mode    = c("connected", "complete"),
     parallel       = FALSE,
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb               = 120,
     n_cores        = 1L
 ) {
   
@@ -1091,6 +1216,9 @@ resolve_shared_cliques <- function(
       min_overlap    = min_overlap,
       overlap_method = overlap_method,
       clique_mode    = clique_mode,
+      range                = range,
+      sensitivity_floor_mb = sensitivity_floor_mb,
+      max_mb               = max_mb,
       .options       = furrr::furrr_options(seed = TRUE)
     )
   } else {
@@ -1100,7 +1228,10 @@ resolve_shared_cliques <- function(
       consistent     = consistent,
       min_overlap    = min_overlap,
       overlap_method = overlap_method,
-      clique_mode    = clique_mode
+      clique_mode    = clique_mode,
+      range                = range,
+      sensitivity_floor_mb = sensitivity_floor_mb,
+      max_mb               = max_mb
     )
   }
   
@@ -1736,7 +1867,10 @@ run_fast_cnv_pipeline <- function(
     pct_floor            = 30,
     min_expr_density     = 1.5,
     min_coding_density   = 1.0,
-    max_gap_mb           = 10
+    max_gap_mb           = 10,
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb  = 120
 ) {
 
   has_density_params <- !is.null(gene_order) &&
@@ -1791,6 +1925,9 @@ run_fast_cnv_pipeline <- function(
     overlap_method         = overlap_method_equiv_cnv_call_merge,
     filter_seq_mb          = filter_seq_mb_equiv,
     parallel               = parallel,
+    range                = range,
+    sensitivity_floor_mb = sensitivity_floor_mb,
+    max_mb               = max_mb,
     n_cores = cores
   )
   
@@ -1814,6 +1951,9 @@ run_fast_cnv_pipeline <- function(
     overlap_method = overlap_method_equiv_cnv_after_filter,
     clique_mode    = clique_mode_consistent,
     parallel       = parallel,
+    range                = range,
+    sensitivity_floor_mb = sensitivity_floor_mb,
+    max_mb               = max_mb,
     n_cores        = cores
   )
   
