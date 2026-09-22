@@ -1,0 +1,84 @@
+# run_config_TE.yaml
+# Single-run config for cnvscfinder / run_pipeline.R
+#
+# Loaded via: Rscript run_pipeline.R --config /path/to/this/file.yaml
+# When --config is given, ALL parameters come from this file — no mixing
+# with other CLI flags. This mirrors the trophectoderm (TE) sbatch job
+# submitted 2026-09-21 (job 13187376), translated 1:1 from its --export
+# values, with two notes:
+#   - max_gap is omitted: confirmed dead code this session (never used by
+#     run_fast_cnv_pipeline()); only max_gap_mb actually does anything.
+#     Revisit once you decide whether to wire in a real two-stage merge.
+#   - remove_reference is carried over as `false`, matching the TE job as
+#     submitted — still an open question from our earlier discussion
+#     (turns off the self-reference filtering we verified as correct).
+#     Confirm intentional before reusing this file for a real run.
+
+# ── General ──────────────────────────────────────────────────────────────
+execution_mode: single
+start_from: block2
+workdir: /scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework/cnv_results/TE
+save_intermediate: false
+resume_if_exists: true
+
+# ── Paths ────────────────────────────────────────────────────────────────
+counts_path: /scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework/data/countmx_trophectoderm.rds
+metadata_path: /scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework/data/metadata_trophectoderm.rds
+gene_order_file: /scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework/data/gencode_v19_gene_pos.txt
+tool_outdir: /scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework/infercnv_results/TE
+chromosome_arms_path: /scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework/data/hg19_chromosome_arms.rds
+coding_genes_path: /scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework/data/hg19_expressing_genes.rds
+cnv_annotated: null   # only used when start_from: block3 or block4
+cell_sizes: null      # only used when start_from: block4
+
+# ── Grouping / identity columns ─────────────────────────────────────────
+group_clusters_col: cell_type
+group_cols: [cell_type, embryo]
+by_col: [embryo, cell_type]
+sample_col: embryo
+cell_id_col: cell_name
+chr_exclude: [MT, Y]
+
+# ── Block 1 — inferCNV / reference-independent splitting ───────────────
+tool: infercnv
+n_splits_within: 3
+cutoff: 0.1
+clonal_col: embryo
+donor_col: embryo 
+remove_reference: false  
+
+# ── Block 2 — merging, density filter, overlap/consistency ─────────────
+pattern: "^run\\.final"
+max_gap_mb: 1
+min_overlap_consistent_calls: 0.8
+min_overlap_multiple_nodes: 0.8
+filter_seq_mb_init: 5.0
+filter_seq_mb_equiv: 7.0
+min_references: 2
+parallel: false
+cores: 1
+
+# gene density filter
+pct_max: 40
+pct_floor: 30
+min_expr_density: 1
+min_coding_density: 1
+
+# overlap method — currently "adaptive"; switch to "adaptive_floor" once
+# it's been calibrated against the test sample (see earlier discussion)
+overlap_method: adaptive_floor
+min_overlap: 0.8
+range: 0.15
+max_mb: 120
+
+# ── Block 3 — chromosome-arm annotation ─────────────────────────────────
+# (uses chromosome_arms_path, group_cols above)
+
+# ── Block 4 — clustering and scoring ────────────────────────────────────
+k_interval: 1.5
+k_value: 1.8
+sensitivity_floor_mb: 20
+min_required_cells: 3
+p_arm_permission: 60
+q_arm_permission: 60
+whole_chr_permission: 65

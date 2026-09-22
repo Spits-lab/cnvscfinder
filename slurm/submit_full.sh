@@ -56,7 +56,23 @@ echo "  PCT_FLOOR:                   ${PCT_FLOOR:-30}"
 echo "  MIN_EXPR_DENSITY:            ${MIN_EXPR_DENSITY:-1.5}"
 echo "  MIN_CODING_DENSITY:          ${MIN_CODING_DENSITY}"
 echo "  MAX_GAP_MB:                  ${MAX_GAP_MB}"
+echo "  --- Adaptive overlap ---"
+echo "  RANGE:                       ${RANGE:-0.15}"
+echo "  MAX_MB:                      ${MAX_MB:-120}"
 echo "============================="
+
+
+# ── Optional args ─────────────────────────────────────────────────────────────
+CLONAL_ARG=""
+if [[ "${CLONAL_COL}" != "NULL" ]]; then
+  CLONAL_ARG="--clonal-col ${CLONAL_COL}"
+fi
+
+DONOR_ARG=""
+if [[ "${DONOR_COL}" != "NULL" ]]; then
+  DONOR_ARG="--donor-col ${DONOR_COL}"
+fi
+
 
 Rscript ${SCRIPT} \
   --execution-mode               "${EXECUTION_MODE}" \
@@ -99,6 +115,9 @@ Rscript ${SCRIPT} \
   --max-gap-mb                "${MAX_GAP_MB}" \
   --donor-col                 "${DONOR_COL}" \
   --clonal-col                "${CLONAL_COL}" \
+  --range                        "${RANGE}" \
+  --max-mb                       "${MAX_MB}" 
+  
   
 echo "Done: $(date)"
 
@@ -110,6 +129,7 @@ else
     echo "Pipeline FAILED with exit code ${EXIT_CODE}"
     exit ${EXIT_CODE}
 fi
+
 
 
 
