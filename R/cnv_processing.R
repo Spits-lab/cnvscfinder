@@ -19,6 +19,7 @@ bioc_packages <- c(
   "GenomicRanges", "IRanges"
 )
 
+<<<<<<< HEAD
 
 #' @title Installation of missing packages
 #'
@@ -48,6 +49,8 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 install_if_missing(bioc_packages, BiocManager::install)
 
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 # Combine all for loading
 all_packages <- c(cran_packages, bioc_packages)
 
@@ -59,6 +62,10 @@ invisible(lapply(all_packages, function(pkg) {
 }))
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 #' Add mode and cell type metadata to pipeline output tables
 #'
 #' Iterates over a nested results list (mode → cell_type → tables)
@@ -175,12 +182,25 @@ filt_remove_refs_cells <- function(df, metadata, filter_seq_mb, mode,
   # ---- Pre-filter ---------------------------------------------------------
   n_input <- nrow(df)
   
+<<<<<<< HEAD
   df <- df |>
     dplyr::arrange(reference, cell_name, chr, cnv_state, start) |>
     dplyr::mutate(
       cnv_length    = as.numeric(end) - as.numeric(start) + 1,
       cnv_length_mb = cnv_length / 1e6
     ) |>
+=======
+  cnv_missing_collumns <- setdiff(c("cnv_length_mb","cnv_length"), colnames(df))
+  if(length(cnv_missing_collumns) > 0L){
+    df <- df |>
+      dplyr::mutate(
+        cnv_length    = as.numeric(end) - as.numeric(start) + 1L,
+        cnv_length_mb = cnv_length / 1e6
+      )
+  }
+
+  df <- df |>
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     dplyr::filter(cnv_length_mb > filter_seq_mb)
   
   n_postfilter <- nrow(df)
@@ -280,6 +300,7 @@ filt_remove_refs_cells <- function(df, metadata, filter_seq_mb, mode,
   return(df_joined)
 }
 
+<<<<<<< HEAD
 #' Merge nearby CNV segments
 #'
 #' Merges CNV segments that are close together within the same reference, cell,
@@ -383,6 +404,8 @@ merge_nearby_regions <- function(df, max_gap = 100000L) {
   merged_df
 }
 
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 
 
 
@@ -391,7 +414,11 @@ size_adaptive_overlap <- function(
     min_overlap          = 0.75, 
     range                = 0.15, 
     sensitivity_floor_mb = 20,
+<<<<<<< HEAD
     max_mb               = 120
+=======
+    max_mb               = 100
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   # at max_mb:               min_overlap - range/2
   # at sensitivity_floor_mb: min_overlap + range/2
@@ -417,7 +444,11 @@ size_adaptive_overlap <- function(
     min_overlap          = 0.75,
     range                = 0.15,
     sensitivity_floor_mb = 20,
+<<<<<<< HEAD
     max_mb               = 120
+=======
+    max_mb               = 100
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   q_len_mb <- (q_end - q_start + 1L) / 1e6
@@ -457,6 +488,79 @@ size_adaptive_overlap <- function(
 }
 
 
+<<<<<<< HEAD
+=======
+size_adaptive_overlap_floor <- function(
+    seg_length_mb,
+    min_overlap          = 0.75,
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb               = 100
+) {
+  # at sensitivity_floor_mb (and below): min_overlap          (strictest)
+  # at max_mb (and above):               min_overlap - range  (loosest, capped)
+
+  pmax(
+    min_overlap - range,
+    pmin(
+      min_overlap,
+      min_overlap - range *
+        (seg_length_mb - sensitivity_floor_mb) /
+        (max_mb        - sensitivity_floor_mb)
+    )
+  )
+}
+
+.adaptive_overlap_floor <- function(
+    q_start, q_end,
+    s_start, s_end,
+    min_overlap          = 0.75,
+    range                = 0.15,
+    sensitivity_floor_mb = 20,
+    max_mb               = 100
+) {
+
+  q_len_mb <- (q_end - q_start + 1L) / 1e6
+  s_len_mb <- (s_end - s_start + 1L) / 1e6
+
+  intersection_mb <- pmax(0,
+    (pmin(q_end, s_end) -
+     pmax(q_start, s_start) + 1L) / 1e6
+  )
+
+  threshold_q <- size_adaptive_overlap_floor(
+    seg_length_mb        = q_len_mb,
+    min_overlap          = min_overlap,
+    range                = range,
+    sensitivity_floor_mb = sensitivity_floor_mb,
+    max_mb               = max_mb
+  )
+
+  threshold_s <- size_adaptive_overlap_floor(
+    seg_length_mb        = s_len_mb,
+    min_overlap          = min_overlap,
+    range                = range,
+    sensitivity_floor_mb = sensitivity_floor_mb,
+    max_mb               = max_mb
+  )
+
+  overlap_pct_q <- intersection_mb / q_len_mb
+  overlap_pct_s <- intersection_mb / s_len_mb
+
+  dplyr::if_else(
+    overlap_pct_q >= threshold_q &
+    overlap_pct_s >= threshold_s,
+    pmin(overlap_pct_q / threshold_q,
+         overlap_pct_s / threshold_s),
+    0
+  )
+}
+
+
+
+
+
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 #' Compute pairwise overlap scores using a named strategy
 #'
 #' Acts as the single entry point for all overlap methods. Individual strategies
@@ -477,7 +581,11 @@ compute_overlap <- function(
     min_overlap          = 0.75,
     range                = 0.15,
     sensitivity_floor_mb = 20,
+<<<<<<< HEAD
     max_mb               = 120
+=======
+    max_mb               = 100
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   .reciprocal <- function(q_start, q_end,
@@ -523,6 +631,19 @@ compute_overlap <- function(
         sensitivity_floor_mb = sensitivity_floor_mb,
         max_mb               = max_mb
       )
+<<<<<<< HEAD
+=======
+    },
+    adaptive_floor    = function(q_start, q_end,
+                              s_start, s_end) {
+      .adaptive_overlap_floor(
+        q_start, q_end, s_start, s_end,
+        min_overlap          = min_overlap,
+        range                = range,
+        sensitivity_floor_mb = sensitivity_floor_mb,
+        max_mb               = max_mb
+      )
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     }
   )
   
@@ -637,7 +758,11 @@ process_cnv_cluster <- function(grp,
     min_overlap, 
     range = 0.15,
     sensitivity_floor_mb = 20,
+<<<<<<< HEAD
     max_mb               = 120
+=======
+    max_mb               = 100
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ){
   
   n           <- nrow(grp)
@@ -720,7 +845,11 @@ assign_cnv_equivalence <- function(
     by_columns = c("cell_name", "chr", "cnv_state"),
     range                = 0.15,
     sensitivity_floor_mb = 20,
+<<<<<<< HEAD
     max_mb               = 120,
+=======
+    max_mb               = 100,
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     n_cores = 1L
 ) {
   
@@ -1047,7 +1176,11 @@ resolve_duplicate_overlaps <- function(
     clique_mode    = c("connected", "complete"),
     range                = 0.15,
     sensitivity_floor_mb = 20,
+<<<<<<< HEAD
     max_mb               = 120
+=======
+    max_mb               = 100
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   clique_mode <- match.arg(clique_mode)
@@ -1185,7 +1318,11 @@ resolve_shared_cliques <- function(
     parallel       = FALSE,
     range                = 0.15,
     sensitivity_floor_mb = 20,
+<<<<<<< HEAD
     max_mb               = 120,
+=======
+    max_mb               = 100,
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     n_cores        = 1L
 ) {
   
@@ -1478,6 +1615,7 @@ apply_density_filter <- function(
 
 
 # ── Pre-merge filter ───────────────────────────────────────────────────────────
+<<<<<<< HEAD
 filter_segments_by_gene_density <- function(
     collapse_df,
     gene_order,
@@ -1535,6 +1673,8 @@ filter_segments_by_gene_density <- function(
   return(result)
 }
 
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 
 filter_segments_by_gene_density <- function(
     collapse_df,
@@ -1808,7 +1948,10 @@ compute_all_segment_stats <- function(
   
   # ── Step 2: Gene length stats ─────────────────────────────────────────────
   cat("\n[2] Gene length stats...\n")
+<<<<<<< HEAD
   print(colnames(result))
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   result <- add_gene_length_stats(
     df           = result,
     expressed_gr = expressed_gr,
@@ -1838,14 +1981,20 @@ compute_all_segment_stats <- function(
 #' with reference support summaries.
 #'
 #' @param gene_level_df A gene-level CNV data frame.
+<<<<<<< HEAD
 #' @param max_gap Maximum genomic gap allowed when merging nearby segments.
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 #' @param min_overlap Minimum reciprocal overlap for equivalence
 #'   assignment.
 #' @param min_references Minimum number of references required to keep a CNV.
 #' @param overlap_method Select the overlap method
 run_fast_cnv_pipeline <- function(
     gene_level_df,
+<<<<<<< HEAD
     max_gap = 100000,
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     min_overlap_consistent_calls = 0.5,
     min_overlap_multiple_nodes = 0.6,
     filter_seq_mb_init = 5,
@@ -1870,7 +2019,11 @@ run_fast_cnv_pipeline <- function(
     max_gap_mb           = 10,
     range                = 0.15,
     sensitivity_floor_mb = 20,
+<<<<<<< HEAD
     max_mb  = 120
+=======
+    max_mb  = 100
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
 
   has_density_params <- !is.null(gene_order) &&
@@ -1915,6 +2068,10 @@ run_fast_cnv_pipeline <- function(
   )
   
   message("→ Removing reference cells")
+<<<<<<< HEAD
+=======
+
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   filt_segments <- filt_remove_refs_cells(merged, metadata, filter_seq_mb = filter_seq_mb_init, mode,
                                           remove_ref = remove_ref)
   

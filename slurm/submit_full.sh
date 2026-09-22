@@ -56,8 +56,29 @@ echo "  PCT_FLOOR:                   ${PCT_FLOOR:-30}"
 echo "  MIN_EXPR_DENSITY:            ${MIN_EXPR_DENSITY:-1.5}"
 echo "  MIN_CODING_DENSITY:          ${MIN_CODING_DENSITY}"
 echo "  MAX_GAP_MB:                  ${MAX_GAP_MB}"
+<<<<<<< HEAD
 echo "============================="
 
+=======
+echo "  --- Adaptive overlap ---"
+echo "  RANGE:                       ${RANGE:-0.15}"
+echo "  MAX_MB:                      ${MAX_MB:-120}"
+echo "============================="
+
+
+# ── Optional args ─────────────────────────────────────────────────────────────
+CLONAL_ARG=""
+if [[ "${CLONAL_COL}" != "NULL" ]]; then
+  CLONAL_ARG="--clonal-col ${CLONAL_COL}"
+fi
+
+DONOR_ARG=""
+if [[ "${DONOR_COL}" != "NULL" ]]; then
+  DONOR_ARG="--donor-col ${DONOR_COL}"
+fi
+
+
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 Rscript ${SCRIPT} \
   --execution-mode               "${EXECUTION_MODE}" \
   --start-from                   "${START_FROM}" \
@@ -81,7 +102,10 @@ Rscript ${SCRIPT} \
   --min-overlap-multiple-nodes   "${MIN_OVERLAP_NODES}" \
   --min-overlap                  "${MIN_OVERLAP}" \
   --min-references               "${MIN_REFERENCES}" \
+<<<<<<< HEAD
   --max-gap                      "${MAX_GAP}" \
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   --cutoff                       "${CUTOFF}" \
   --tool                         "${TOOL}" \
   --sample-col                   "${SAMPLE_COL}" \
@@ -97,8 +121,15 @@ Rscript ${SCRIPT} \
   --min-expr-density          "${MIN_EXPR_DENSITY}" \
   --min-coding-density        "${MIN_CODING_DENSITY}" \
   --max-gap-mb                "${MAX_GAP_MB}" \
+<<<<<<< HEAD
   --donor-col                 "${DONOR_COL}" \
   --clonal-col                "${CLONAL_COL}" \
+=======
+  --clonal-col                "${CLONAL_COL}" \
+  --range                        "${RANGE}" \
+  --max-mb                       "${MAX_MB}" 
+  
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   
 echo "Done: $(date)"
 
@@ -114,3 +145,7 @@ fi
 
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)

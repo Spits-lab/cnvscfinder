@@ -1,3 +1,11 @@
+<<<<<<< HEAD
+=======
+#!/usr/bin/env Rscript
+# scripts/run_round3_infercnv.R
+# Runs inferCNV Round 2 with diploid cells as dedicated reference
+# No splits — diploid_ref goes directly as reference group
+
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 BASE <- "/scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework"
 
 suppressPackageStartupMessages({
@@ -6,10 +14,17 @@ suppressPackageStartupMessages({
 })
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
+<<<<<<< HEAD
 counts_path     <- file.path(BASE, "data/countmx_trophectoderm.rds")
 metadata_r2_path <- file.path(BASE, "data/metadata1208_TE.rds")
 gene_order_path <- file.path(BASE, "data/gencode_v19_gene_pos.txt")
 outdir          <- file.path(BASE, "infercnv_results/TE/single_run")
+=======
+counts_path     <- file.path(BASE, "data/count_mx_VUB04.rds")
+metadata_r2_path <- file.path(BASE, "data/metadata0409_round7.rds")
+gene_order_path <- file.path(BASE, "data/hg38_gencode_v27.txt")
+outdir          <- file.path(BASE, "infercnv_results/VUB04/round7")
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 
 
 dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
@@ -70,10 +85,17 @@ t_start <- proc.time()
 processed_obj <- infercnv::run(
   infercnv_obj        = infercnv_obj,
   out_dir             = outdir,
+<<<<<<< HEAD
   cutoff              = 0.5,
   cluster_by_groups   = TRUE,
   HMM                 = TRUE,
   denoise             = FALSE,
+=======
+  cutoff              = 0.1,
+  cluster_by_groups   = TRUE,
+  HMM                 = TRUE,
+  denoise             = T,
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   analysis_mode       = "subclusters",
   output_format       = NA,
   no_plot             = TRUE,

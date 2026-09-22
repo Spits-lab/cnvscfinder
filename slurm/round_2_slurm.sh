@@ -3,7 +3,11 @@
 BASE="/scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework"
 
 sbatch \
+<<<<<<< HEAD
   --time=01:00:00 \
+=======
+  --time=01:30:00 \
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   --mem=64G \
   --job-name="r2_benchmark" \
   --output="${BASE}/logs/r3_benchmark_%j.out" \
@@ -13,7 +17,11 @@ sbatch \
     module load inferCNV/1.18.1-foss-2023a
     module load R-bundle-Bioconductor/3.18-foss-2023a-R-4.3.2
     module load R-bundle-CRAN/2023.12-foss-2023a
+<<<<<<< HEAD
     Rscript ${BASE}/R/round2_embryo.R
+=======
+    Rscript ${BASE}/R/round2.R
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   "
 
 echo "Submitted ✅"

@@ -131,6 +131,7 @@ validate_metadata <- function(metadata,
 }
 
 
+<<<<<<< HEAD
 #' Add A/B/C random split column to metadata for a single groups
 #'
 #' Splits cells of one cluster into three roughly equal groups.
@@ -266,6 +267,8 @@ make_splits <- function(
   return(sub)
 }
 
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 
 # ── Subfunction 1: PC1-based splitting (original) ─────────────────────────────
 .split_by_pc1 <- function(
@@ -301,8 +304,12 @@ make_splits <- function(
     pca_coords,
     n_splits,
     labels,
+<<<<<<< HEAD
     clonal_col,
     donor_col = NULL
+=======
+    clonal_col
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   n           <- nrow(sub)
@@ -315,8 +322,12 @@ make_splits <- function(
     ) %>%
     dplyr::group_by(
       dplyr::across(dplyr::all_of(
+<<<<<<< HEAD
         c(clonal_col,
           if (!is.null(donor_col)) donor_col)
+=======
+        c(clonal_col)
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
       ))
     ) %>%
     dplyr::summarise(
@@ -350,8 +361,11 @@ make_splits <- function(
   for (i in seq_len(n_clonal)) {
     
     grp_size  <- clonal_summary$n_cells[i]
+<<<<<<< HEAD
     grp_donor <- if (!is.null(donor_col))
       clonal_summary[[donor_col]][i] else NULL
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     
     # ── Advance split if current is full ──────────────────────────────────
     # Only advance if not last split
@@ -371,6 +385,7 @@ make_splits <- function(
     split_sizes[current_split]  <- split_sizes[current_split] +
                                     grp_size
     
+<<<<<<< HEAD
     # Log donor placement (informational only)
     if (!is.null(grp_donor)) {
       donor_already_in_split <- grp_donor %in%
@@ -386,6 +401,8 @@ make_splits <- function(
         split_donors[[current_split]], grp_donor)
     }
     
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     cat(sprintf(
       "  Assigned %s → split %s (split now %d cells)\n",
       clonal_summary[[clonal_col]][i],
@@ -402,7 +419,10 @@ make_splits <- function(
     dplyr::select(
       dplyr::all_of(
         c(clonal_col,
+<<<<<<< HEAD
           if (!is.null(donor_col)) donor_col,
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
           "n_cells", "median_pc1", "split_group")
       )
     )
@@ -413,6 +433,7 @@ make_splits <- function(
     rows      <- clonal_summary$split_group == labels[s]
     n_in      <- sum(clonal_summary$n_cells[rows],
                      na.rm = TRUE)
+<<<<<<< HEAD
     donors_in <- if (!is.null(donor_col))
       unique(clonal_summary[[donor_col]][rows]) else NULL
     cat(sprintf(
@@ -423,6 +444,8 @@ make_splits <- function(
                paste(donors_in, collapse = ", "))
       else ""
     ))
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   }
   
   # ── Map back to cells ──────────────────────────────────────────────────────
@@ -470,8 +493,12 @@ make_splits <- function(
     n_splits   = 3,
     counts_mx,
     seed       = 42,
+<<<<<<< HEAD
     clonal_col = NULL,  # if NULL → PC1 only
     donor_col  = NULL   # only used if clonal_col set
+=======
+    clonal_col = NULL  # if NULL → PC1 only
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   # ── Validate ───────────────────────────────────────────────────────────────
@@ -505,12 +532,15 @@ make_splits <- function(
     stop("clonal_col '", clonal_col,
          "' not found in metadata.")
   }
+<<<<<<< HEAD
   if (!is.null(donor_col) &&
       !donor_col %in% colnames(sub)) {
     stop("donor_col '", donor_col,
          "' not found in metadata.")
   }
   
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   # ── Subset counts ──────────────────────────────────────────────────────────
   missing <- setdiff(cell_names, colnames(counts_mx))
   if (length(missing) > 0) {
@@ -553,8 +583,12 @@ make_splits <- function(
       pca_coords = pca_coords,
       n_splits   = n_splits,
       labels     = labels,
+<<<<<<< HEAD
       clonal_col = clonal_col,
       donor_col  = donor_col
+=======
+      clonal_col = clonal_col
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     )
     
   } else {
@@ -763,8 +797,12 @@ build_annotations_df <- function(cell_names, group_labels) {
                               chromosomes_to_exclude,
                               min_max_counts,
                               n_splits_within,
+<<<<<<< HEAD
                               clonal_col,
                               donor_col) {
+=======
+                              clonal_col) {
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   
   group_clusters         <- unique(metadata[[group_col]])
   all_split_metadata <- list()
@@ -792,8 +830,12 @@ build_annotations_df <- function(cell_names, group_labels) {
           subset_group_val = ct,
           n_splits      = n_splits_within,
           counts_mx     = counts_mx,
+<<<<<<< HEAD
           clonal_col = clonal_col,
           donor_col  = donor_col
+=======
+          clonal_col = clonal_col
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
         )
         
         # Store split registry
@@ -962,8 +1004,12 @@ make_infercnv_objects <- function(counts_mx,
                                   chromosomes_to_exclude     = c("MT", "Y"),
                                   min_max_counts  = c(100, 1e6),
                                   n_splits_within,
+<<<<<<< HEAD
                                   clonal_col,
                                  donor_col) {
+=======
+                                  clonal_col) {
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   
   # ── Input checks ────────────────────────────────────────────────────────
   if (!mode %in% c("within", "across", "both")) {
@@ -999,8 +1045,12 @@ make_infercnv_objects <- function(counts_mx,
       chromosomes_to_exclude     = chromosomes_to_exclude,
       min_max_counts  = min_max_counts,
       n_splits_within,
+<<<<<<< HEAD
        clonal_col,
        donor_col
+=======
+       clonal_col
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     )
   }
   
@@ -1267,7 +1317,10 @@ run_infercnv_pipeline <- function(
   min_max_counts  = c(100, 1e6),
   n_splits_within = 3,
   clonal_col = NULL,
+<<<<<<< HEAD
   donor_col = NULL,
+=======
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   # ---- run_infercnv_objects parameters -----------------------------------
   base_outdir,
   cutoff          = 0.1,
@@ -1332,8 +1385,12 @@ run_infercnv_pipeline <- function(
     chromosomes_to_exclude     = chromosomes_to_exclude,
     min_max_counts  = min_max_counts,
     n_splits_within = n_splits_within,
+<<<<<<< HEAD
     clonal_col,
   donor_col
+=======
+    clonal_col
+>>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   )
   
   t_make_end <- proc.time()

@@ -1,0 +1,34 @@
+# ── Data and results ──────────────────────────────────────────────────────────
+data/
+infercnv_results/
+cnv_results/
+configs/
+tests/
+cnvscfinder/
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+logs/
+*.log
+*.out
+*.err
+
+# ── Old and test scripts ──────────────────────────────────────────────────────
+scripts_old/
+Example_Scripts_Analysis/
+*_old.R
+*_backup.R
+*_test.R
+
+# ── Temporary files ───────────────────────────────────────────────────────────
+*.tmp
+.Rhistory
+.RData
+.Rproj.user/
+
+# ── Keep these even if pattern matches ───────────────────────────────────────
+!R/pipeline.R
+!R/cnv_processing.R
+!R/cnv_scoring.R
+!R/cnv_annotation.R
+!scripts/run_pipeline.R
+!slurm/submit_full.sh
