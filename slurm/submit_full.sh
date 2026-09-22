@@ -55,7 +55,6 @@ echo "  PCT_FLOOR:                   ${PCT_FLOOR:-30}"
 echo "  MIN_EXPR_DENSITY:            ${MIN_EXPR_DENSITY:-1.5}"
 echo "  MIN_CODING_DENSITY:          ${MIN_CODING_DENSITY}"
 echo "  MAX_GAP_MB:                  ${MAX_GAP_MB}"
-<<<<<<< HEAD
 echo "============================="
 echo "  --- Adaptive overlap ---"
 echo "  RANGE:                       ${RANGE:-0.15}"
@@ -70,8 +69,6 @@ if [[ "${CLONAL_COL}" != "NULL" ]]; then
 fi
 
 
-
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 Rscript ${SCRIPT} \
   --execution-mode               "${EXECUTION_MODE}" \
   --start-from                   "${START_FROM}" \
