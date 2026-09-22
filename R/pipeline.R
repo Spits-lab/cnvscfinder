@@ -65,12 +65,7 @@ run_cnv_tool <- function(
     window_length     = 140L,
     no_plot           = TRUE,
     resume_if_exists  = TRUE,
-<<<<<<< HEAD
-    clonal_col = NULL,
-    donor_col = NULL
-=======
     clonal_col = NULL
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   tool <- match.arg(tool)
@@ -93,12 +88,7 @@ run_cnv_tool <- function(
            window_length     = window_length,
            no_plot           = no_plot,
            resume_if_exists  = resume_if_exists,
-<<<<<<< HEAD
-           clonal_col = clonal_col,
-           donor_col = donor_col
-=======
            clonal_col = clonal_col
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
          ),
          
          "scevan" = stop(
@@ -121,10 +111,6 @@ process_tool_cnv_runs <- function(
     mode                                  = "within",
     tool                                  = "infercnv",
     pattern                               = NULL,
-<<<<<<< HEAD
-    max_gap                               = 100000,
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     min_overlap_consistent_calls          = 0.5,
     min_overlap_multiple_nodes            = 0.6,
     filter_seq_mb_init                    = 5,
@@ -208,10 +194,6 @@ process_tool_cnv_runs <- function(
     # Run CNV pipeline
     run_fast_cnv_pipeline(
       gene_level_df                         = tools_data[[1]],
-<<<<<<< HEAD
-      max_gap                               = max_gap,
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
       min_overlap_consistent_calls          = min_overlap_consistent_calls,
       min_overlap_multiple_nodes            = min_overlap_multiple_nodes,
       filter_seq_mb_init                    =  filter_seq_mb_init,
@@ -711,12 +693,7 @@ validate_metadata_against_disk <- function(
     window_length     = 140L,
     no_plot           = TRUE,
     resume_if_exists  = TRUE,
-<<<<<<< HEAD
-    clonal_col = NULL,
-    donor_col = NULL
-=======
     clonal_col = NULL
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   message("\n── Block1 single mode — all cell types ──────────────────────────")
@@ -738,12 +715,7 @@ validate_metadata_against_disk <- function(
     window_length     = window_length,
     no_plot           = no_plot,
     resume_if_exists  = resume_if_exists,
-<<<<<<< HEAD
-    clonal_col = clonal_col,
-    donor_col = donor_col
-=======
     clonal_col = clonal_col
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     
   )
   
@@ -898,12 +870,7 @@ validate_metadata_against_disk <- function(
     window_length     = window_length,
     no_plot           = no_plot,
     resume_if_exists  = resume_if_exists,
-<<<<<<< HEAD
-    clonal_col = clonal_col,
-    donor_col = donor_col
-=======
     clonal_col = clonal_col
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   )
   
   # ---- Validate and save split_metadata -----------------------------------
@@ -968,23 +935,11 @@ run_full_cnv_pipeline <- function(
     k_discrete = 1.5,
     remove_ref = F,
     clonal_col = NULL,
-<<<<<<< HEAD
-    donor_col = NULL,
-    # ---- Block 2 -----------------------------------------------------------
-    tool                                  = "infercnv",
-    pattern                               = "^run\\.final",
-    max_gap                               = 100000,
-    min_overlap_consistent_calls          = 0.75,
-    min_overlap_multiple_nodes            = 0.6,
-    filter_seq_mb_init                    = 5,
-    filter_seq_mb_equiv                   = 7,
-=======
     # ---- Block 2 -----------------------------------------------------------
     tool                                  = "infercnv",
     pattern                               = "^run\\.final",
     min_overlap_consistent_calls          = 0.75,
     min_overlap_multiple_nodes            = 0.6,
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     min_references                        = 2,
     parallel                              = FALSE,
     cores                                 = 1L,
@@ -1083,12 +1038,7 @@ run_full_cnv_pipeline <- function(
       analysis_mode     = "subclusters",
       no_plot           = TRUE,
       resume_if_exists  = resume_if_exists,
-<<<<<<< HEAD
-      clonal_col = clonal_col,
-      donor_col = donor_col
-=======
       clonal_col = clonal_col
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     )
     
     
@@ -1101,14 +1051,6 @@ run_full_cnv_pipeline <- function(
       summaries$block1$runtime_s / 60
     ))
     
-<<<<<<< HEAD
-    if (save_intermediate) {
-      path <- file.path(workdir, "block1_results.rds")
-      saveRDS(results$block1, path)
-      message("  Saved: ", path)
-    }
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   }
   # =========================================================================
   # BLOCK 2 — Load CNV calls and extract supported events
@@ -1163,11 +1105,7 @@ run_full_cnv_pipeline <- function(
       within_cell_group <- results$block1$obj_list[["within_cell_group"]]
       within_objs <- within_cell_group[["objects"]] %||% within_cell_group
       within_objs <- Filter(function(x) !is.null(x) && length(x) > 0L, within_objs)
-<<<<<<< HEAD
-      
-=======
       results$block1 <- NULL
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     if (length(within_objs) == 0L) {
     stop(
       "No valid cell types found in Block1 output.\n",
@@ -1198,18 +1136,10 @@ run_full_cnv_pipeline <- function(
   
   run_fast_cnv_pipeline(
     gene_level_df                         = gene_level_df,
-<<<<<<< HEAD
-    max_gap                               = max_gap,
-    min_overlap_consistent_calls          = min_overlap_consistent_calls,
-    min_overlap_multiple_nodes            = min_overlap_multiple_nodes,
-    filter_seq_mb_init                    = filter_seq_mb_init,
-    filter_seq_mb_equiv                   = filter_seq_mb_equiv,
-=======
     min_overlap_consistent_calls          = min_overlap_consistent_calls,
     min_overlap_multiple_nodes            = min_overlap_multiple_nodes,
     filter_seq_mb_init                    = sensitivity_floor_mb - 2.5,
     filter_seq_mb_equiv                   = 0,
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     min_references                        = min_references,
     overlap_method_equiv_cnv_call_merge   = "reciprocal",
     overlap_method_equiv_cnv_after_filter = "reciprocal",
@@ -1220,10 +1150,6 @@ run_full_cnv_pipeline <- function(
     metadata                              = metadata,
     mode                                  = "within",
     remove_ref = remove_ref,
-<<<<<<< HEAD
-
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     coding_gr                 = coding_gr,
     gene_order                = ct_prepared[[1]][[2]],
     coding_expressed_set      = coding_expressed_set,
@@ -1245,16 +1171,9 @@ run_full_cnv_pipeline <- function(
         mode                                  = "within",
         tool                                  = tool,
         pattern                               = pattern,
-<<<<<<< HEAD
-        max_gap                               = max_gap,
-        min_overlap_consistent_calls          = min_overlap_consistent_calls,
-        min_overlap_multiple_nodes            = min_overlap_multiple_nodes,
-        filter_seq_mb_init                    = sensitivity_floor_mb - 7.5,
-=======
         min_overlap_consistent_calls          = min_overlap_consistent_calls,
         min_overlap_multiple_nodes            = min_overlap_multiple_nodes,
         filter_seq_mb_init                    = sensitivity_floor_mb - 2.5,
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
         filter_seq_mb_equiv                   = 0,
         min_references                        = min_references,
         overlap_method_equiv_cnv_call_merge   = "reciprocal",
@@ -1264,12 +1183,8 @@ run_full_cnv_pipeline <- function(
         clique_mode_consistent                = clique_mode_consistent,
         removed_log_return                    = removed_log_return,
         metadata                              = metadata,
-<<<<<<< HEAD
-         k = k_discrete,
-=======
         remove_ref = remove_ref,
         k = k_discrete,
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
         coding_gr                 = coding_gr,
         coding_expressed_set      = coding_expressed_set,
         pct_max                   = pct_max,
@@ -1461,11 +1376,7 @@ run_full_cnv_pipeline <- function(
       cnv_annotated,
       by             = by,
       overlap_method = overlap_method,
-<<<<<<< HEAD
-      min_ovelap     = min_overlap,
-=======
       min_overlap     = min_overlap,
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
       sample_col     = sample_col,
       cell_col       = cell_col,
       range                = range,

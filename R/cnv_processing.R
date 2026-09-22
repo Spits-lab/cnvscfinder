@@ -19,38 +19,6 @@ bioc_packages <- c(
   "GenomicRanges", "IRanges"
 )
 
-<<<<<<< HEAD
-
-#' @title Installation of missing packages
-#'
-#' @description
-#'  Installs required packages that are not currently installed 
-#' 
-#' @param pkgs packages that you need for your analysis
-#' @param installer type of installation, if it is from Biocondutor e.g(BiocManager::install) or cran
-#' 
-#' 
-install_if_missing <- function(pkgs, installer) {
-  
-  missing <- pkgs[!pkgs %in% rownames(installed.packages())]
-  
-  if (length(missing) > 0) {
-    message("Installing missing packages: ", paste(missing, collapse = ", "))
-    installer(missing)
-  }
-}
-
-
-# Install missing CRAN and Bioconductor packages
-install_if_missing(cran_packages, install.packages)
-
-# Load BiocManager if not installed
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-install_if_missing(bioc_packages, BiocManager::install)
-
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 # Combine all for loading
 all_packages <- c(cran_packages, bioc_packages)
 
@@ -62,10 +30,6 @@ invisible(lapply(all_packages, function(pkg) {
 }))
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 #' Add mode and cell type metadata to pipeline output tables
 #'
 #' Iterates over a nested results list (mode → cell_type → tables)
@@ -182,14 +146,6 @@ filt_remove_refs_cells <- function(df, metadata, filter_seq_mb, mode,
   # ---- Pre-filter ---------------------------------------------------------
   n_input <- nrow(df)
   
-<<<<<<< HEAD
-  df <- df |>
-    dplyr::arrange(reference, cell_name, chr, cnv_state, start) |>
-    dplyr::mutate(
-      cnv_length    = as.numeric(end) - as.numeric(start) + 1,
-      cnv_length_mb = cnv_length / 1e6
-    ) |>
-=======
   cnv_missing_collumns <- setdiff(c("cnv_length_mb","cnv_length"), colnames(df))
   if(length(cnv_missing_collumns) > 0L){
     df <- df |>
@@ -200,7 +156,6 @@ filt_remove_refs_cells <- function(df, metadata, filter_seq_mb, mode,
   }
 
   df <- df |>
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     dplyr::filter(cnv_length_mb > filter_seq_mb)
   
   n_postfilter <- nrow(df)
@@ -300,125 +255,13 @@ filt_remove_refs_cells <- function(df, metadata, filter_seq_mb, mode,
   return(df_joined)
 }
 
-<<<<<<< HEAD
-#' Merge nearby CNV segments
-#'
-#' Merges CNV segments that are close together within the same reference, cell,
-#' chromosome, and CNV state.
-#'
-#' @param df A data frame of CNV segments.
-#' @param max_gap Maximum genomic gap allowed between two segments for merging.
-#'   Default is 100000.
-#'
-#' @return A data frame of merged CNV regions.
-merge_nearby_regions <- function(df, max_gap = 100000L) {
-  # ---- Input validation ---------------------------------------------------
-  required <- c("reference", "cell_name", "chr", "state", "start", "stop")
-  if (!all(required %in% colnames(df))) {
-    stop("Missing required columns")
-  }
-  
-  if (any(df$start >= df$stop)) {
-    stop("Invalid CNV intervals: start >= stop")
-  }
-  
-  if (any(is.na(df[, required]))) {
-    stop("Null values detected in CNV table")
-  }
-  
-
-  n_postfilter <- nrow(df)
-  # ---- Core merging logic -------------------------------------------------
-  merged_df <- df %>%
-    group_by(reference, cell_name, chr, state) %>%
-    arrange(start, .by_group = TRUE) %>%
-    mutate(
-      gap = start - lag(stop),
-      new_block = is.na(gap) | gap > max_gap,
-      merge_id = cumsum(new_block)
-    ) %>%
-    group_by(reference, cell_name, chr, state, merge_id) %>%
-    summarise(
-      start      = min(start),
-      end        = max(stop),
-      n_segments = n(),
-      raw_state  = mean(raw_state),
-      .groups    = "drop"
-    ) %>%
-    dplyr::rename(cnv_state = state) %>%
-    dplyr::select(-merge_id) %>%
-    dplyr::arrange(reference, cell_name, chr, cnv_state, start)
-  
-
-  # ---- Sanity checks ------------------------------------------------------
-  n_merged <- nrow(merged_df)
-  # Check 1: merge summary reporting
-  message(sprintf(paste0(
-    "Merge summary:\n",
-    "  Input:                    %d rows\n",
-    "  After merging:            %d rows\n",
-    "  Reduction:                %d rows (%.1f%%)"
-  ),
-  n_postfilter,
-  n_merged,
-  n_postfilter - n_merged,
-  100 * (n_postfilter - n_merged) / n_postfilter
-  ))
-  
-  # Check 2: warn if merging produced no reduction
-  if (n_merged >= n_postfilter) {
-    warning(sprintf(
-      "No reduction after merging: before = %d, after = %d. using the max_gap = %d.",
-      as.integer(n_postfilter),
-      as.integer(n_merged),
-      as.integer(max_gap)
-    ))
-  }
-  
-  # Check 3: empty output guard
-  if (n_merged == 0L) {
-    stop("No segments remain after merging. Check max_gap and filter_seq_mb.")
-  }
-  
-  # Check 4: coordinate integrity after merging
-  if (any(merged_df$start >= merged_df$end, na.rm = TRUE)) {
-    stop("Merged segments have start >= end. Check summarise logic.")
-  }
-  
-  # Check 5: no NA in key output columns
-  key_cols  <- c("reference", "cell_name", "chr", "cnv_state", "start", "end")
-  na_counts <- colSums(is.na(merged_df[, key_cols]))
-  if (any(na_counts > 0L)) {
-    stop(
-      "NA values in output columns after merging: ",
-      paste(names(na_counts[na_counts > 0L]), collapse = ", ")
-    )
-  }
-  
-  # Check 6: n_segments should always be >= 1
-  if (any(merged_df$n_segments < 1L, na.rm = TRUE)) {
-    stop("Merged segments with n_segments < 1 detected. Check summarise logic.")
-  }
-  
-  
-  merged_df
-}
-
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
-
-
 
 size_adaptive_overlap <- function(
     seg_length_mb,
     min_overlap          = 0.75, 
     range                = 0.15, 
     sensitivity_floor_mb = 20,
-<<<<<<< HEAD
-    max_mb               = 120
-=======
     max_mb               = 100
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   # at max_mb:               min_overlap - range/2
   # at sensitivity_floor_mb: min_overlap + range/2
@@ -444,11 +287,7 @@ size_adaptive_overlap <- function(
     min_overlap          = 0.75,
     range                = 0.15,
     sensitivity_floor_mb = 20,
-<<<<<<< HEAD
-    max_mb               = 120
-=======
     max_mb               = 100
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   q_len_mb <- (q_end - q_start + 1L) / 1e6
@@ -488,8 +327,6 @@ size_adaptive_overlap <- function(
 }
 
 
-<<<<<<< HEAD
-=======
 size_adaptive_overlap_floor <- function(
     seg_length_mb,
     min_overlap          = 0.75,
@@ -560,7 +397,6 @@ size_adaptive_overlap_floor <- function(
 
 
 
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 #' Compute pairwise overlap scores using a named strategy
 #'
 #' Acts as the single entry point for all overlap methods. Individual strategies
@@ -581,11 +417,7 @@ compute_overlap <- function(
     min_overlap          = 0.75,
     range                = 0.15,
     sensitivity_floor_mb = 20,
-<<<<<<< HEAD
-    max_mb               = 120
-=======
     max_mb               = 100
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   .reciprocal <- function(q_start, q_end,
@@ -631,8 +463,6 @@ compute_overlap <- function(
         sensitivity_floor_mb = sensitivity_floor_mb,
         max_mb               = max_mb
       )
-<<<<<<< HEAD
-=======
     },
     adaptive_floor    = function(q_start, q_end,
                               s_start, s_end) {
@@ -643,7 +473,6 @@ compute_overlap <- function(
         sensitivity_floor_mb = sensitivity_floor_mb,
         max_mb               = max_mb
       )
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     }
   )
   
@@ -758,11 +587,7 @@ process_cnv_cluster <- function(grp,
     min_overlap, 
     range = 0.15,
     sensitivity_floor_mb = 20,
-<<<<<<< HEAD
-    max_mb               = 120
-=======
     max_mb               = 100
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ){
   
   n           <- nrow(grp)
@@ -845,11 +670,7 @@ assign_cnv_equivalence <- function(
     by_columns = c("cell_name", "chr", "cnv_state"),
     range                = 0.15,
     sensitivity_floor_mb = 20,
-<<<<<<< HEAD
-    max_mb               = 120,
-=======
     max_mb               = 100,
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     n_cores = 1L
 ) {
   
@@ -1176,11 +997,7 @@ resolve_duplicate_overlaps <- function(
     clique_mode    = c("connected", "complete"),
     range                = 0.15,
     sensitivity_floor_mb = 20,
-<<<<<<< HEAD
-    max_mb               = 120
-=======
     max_mb               = 100
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
   
   clique_mode <- match.arg(clique_mode)
@@ -1318,11 +1135,7 @@ resolve_shared_cliques <- function(
     parallel       = FALSE,
     range                = 0.15,
     sensitivity_floor_mb = 20,
-<<<<<<< HEAD
-    max_mb               = 120,
-=======
     max_mb               = 100,
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     n_cores        = 1L
 ) {
   
@@ -1615,66 +1428,6 @@ apply_density_filter <- function(
 
 
 # ── Pre-merge filter ───────────────────────────────────────────────────────────
-<<<<<<< HEAD
-filter_segments_by_gene_density <- function(
-    collapse_df,
-    gene_order,
-    coding_gr,
-    coding_expressed_set,
-    pct_max            = 45,
-    pct_floor          = 30,
-    min_expr_density   = 1.5,
-    min_coding_density = 1.0
-) {
-  
-  # Build expressed_gr from gene_order
-  expressed_table <- as.data.frame(gene_order)
-  expressed_table$gene <- rownames(expressed_table)
-  colnames(expressed_table) <- c("chr", "start",
-                                  "stop", "gene")
-  expressed_gr <- GenomicRanges::GRanges(
-    seqnames = expressed_table$chr,
-    ranges   = IRanges::IRanges(
-      start = expressed_table$start,
-      end   = expressed_table$stop
-    )
-  )
-  expressed_gr$gene <- expressed_table$gene
-  
-  cat("  expressed_gr:",
-      length(expressed_gr), "genes\n")
-  
-  n_before <- nrow(collapse_df)
-  
-  if (nrow(coding_counts) == 0) {
-    message("  No coding genes found — skipping")
-    return(collapse_df)
-  }
-  
-  result <- collapse_df %>%
-    compute_segment_density(
-      coding_gr            = coding_gr,
-      expressed_gr         = expressed_gr,
-      coding_expressed_set = coding_expressed_set
-    ) %>%
-    apply_density_filter(
-      pct_max            = pct_max,
-      pct_floor          = pct_floor,
-      min_expr_density   = min_expr_density,
-      min_coding_density = min_coding_density
-    )
-  
-  message(sprintf(
-    "  Pre-merge filter: %d → %d (removed %d)",
-    n_before, nrow(result),
-    n_before - nrow(result)
-  ))
-  
-  return(result)
-}
-
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 
 filter_segments_by_gene_density <- function(
     collapse_df,
@@ -1948,10 +1701,6 @@ compute_all_segment_stats <- function(
   
   # ── Step 2: Gene length stats ─────────────────────────────────────────────
   cat("\n[2] Gene length stats...\n")
-<<<<<<< HEAD
-  print(colnames(result))
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   result <- add_gene_length_stats(
     df           = result,
     expressed_gr = expressed_gr,
@@ -1981,20 +1730,12 @@ compute_all_segment_stats <- function(
 #' with reference support summaries.
 #'
 #' @param gene_level_df A gene-level CNV data frame.
-<<<<<<< HEAD
-#' @param max_gap Maximum genomic gap allowed when merging nearby segments.
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 #' @param min_overlap Minimum reciprocal overlap for equivalence
 #'   assignment.
 #' @param min_references Minimum number of references required to keep a CNV.
 #' @param overlap_method Select the overlap method
 run_fast_cnv_pipeline <- function(
     gene_level_df,
-<<<<<<< HEAD
-    max_gap = 100000,
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     min_overlap_consistent_calls = 0.5,
     min_overlap_multiple_nodes = 0.6,
     filter_seq_mb_init = 5,
@@ -2019,11 +1760,7 @@ run_fast_cnv_pipeline <- function(
     max_gap_mb           = 10,
     range                = 0.15,
     sensitivity_floor_mb = 20,
-<<<<<<< HEAD
-    max_mb  = 120
-=======
     max_mb  = 100
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 ) {
 
   has_density_params <- !is.null(gene_order) &&
@@ -2068,10 +1805,6 @@ run_fast_cnv_pipeline <- function(
   )
   
   message("→ Removing reference cells")
-<<<<<<< HEAD
-=======
-
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   filt_segments <- filt_remove_refs_cells(merged, metadata, filter_seq_mb = filter_seq_mb_init, mode,
                                           remove_ref = remove_ref)
   

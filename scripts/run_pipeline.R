@@ -72,21 +72,6 @@ optparse::make_option(
     "[default: NULL — PC1 splitting only]"
   )
 ),
-<<<<<<< HEAD
-optparse::make_option(
-  "--donor-col",
-  type    = "character",
-  default = NULL,
-  help    = paste(
-    "Metadata column defining donor.",
-    "Used to mix donors across splits when",
-    "--clonal-col is set (e.g. donor, patient).",
-    "[default: NULL]"
-  )
-),
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
-  
 optparse::make_option(
   "--coding-genes-path",
   type    = "character",
@@ -213,15 +198,6 @@ optparse::make_option(
     help    = "Regex pattern to match inferCNV result files [default: %default]"
   ),
   optparse::make_option(
-<<<<<<< HEAD
-    "--max-gap",
-    type    = "integer",
-    default = 100000L,
-    help    = "Maximum gap for merging nearby segments [default: %default]"
-  ),
-  optparse::make_option(
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     "--min-overlap-consistent-calls",
     type    = "double",
     default = 0.75,
@@ -233,15 +209,6 @@ optparse::make_option(
     default = 0.6,
     help    = "Minimum overlap for multi-node merging [default: %default]"
   ),
-<<<<<<< HEAD
-  optparse::make_option(
-    "--filter-seq-mb-init",
-    type    = "double",
-    default = 5.0,
-    help    = "Minimum segment length before merging in Mb [default: %default]"
-  ),
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     optparse::make_option(
     "--overlap-method",
     type    = "character",
@@ -249,15 +216,6 @@ optparse::make_option(
     help    = "Type of overlap method implemented"
   ),
   optparse::make_option(
-<<<<<<< HEAD
-    "--filter-seq-mb-equiv",
-    type    = "double",
-    default = 7.0,
-    help    = "Minimum segment length before equivalence in Mb [default: %default]"
-  ),
-  optparse::make_option(
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
     "--min-references",
     type    = "integer",
     default = 2L,
@@ -506,10 +464,6 @@ group_cols    <- trimws(strsplit(opt$`group-cols`, ",")[[1]])
 
 # ── Integers ─────────────────────────────────────────────────────────────────
 opt$`n-splits-within`  <- as.integer(opt$`n-splits-within`)
-<<<<<<< HEAD
-opt$`max-gap`          <- as.integer(opt$`max-gap`)
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 opt$`min-references`   <- as.integer(opt$`min-references`)
 opt$`min-required-cells` <- as.integer(opt$`min-required-cells`)
 opt$cores              <- as.integer(opt$cores)
@@ -519,11 +473,6 @@ opt$cutoff                          <- as.double(opt$cutoff)
 opt$`min-overlap`                   <- as.double(opt$`min-overlap`)
 opt$`min-overlap-consistent-calls`  <- as.double(opt$`min-overlap-consistent-calls`)
 opt$`min-overlap-multiple-nodes`    <- as.double(opt$`min-overlap-multiple-nodes`)
-<<<<<<< HEAD
-opt$`filter-seq-mb-init`            <- as.double(opt$`filter-seq-mb-init`)
-opt$`filter-seq-mb-equiv`           <- as.double(opt$`filter-seq-mb-equiv`)
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 opt$`p-arm-permission`              <- as.double(opt$`p-arm-permission`)
 opt$`q-arm-permission`              <- as.double(opt$`q-arm-permission`)
 opt$`whole-chr-permission`          <- as.double(opt$`whole-chr-permission`)
@@ -555,10 +504,6 @@ check_no_na <- function(val, name) {
 }
 
 check_no_na(opt$`n-splits-within`,  "--n-splits-within")
-<<<<<<< HEAD
-check_no_na(opt$`max-gap`,          "--max-gap")
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 check_no_na(opt$`min-references`,   "--min-references")
 check_no_na(opt$`min-required-cells`,"--min-required-cells")
 check_no_na(opt$cutoff,             "--cutoff")
@@ -580,14 +525,6 @@ if (is.null(opt$`clonal-col`) ||
   opt$`clonal-col` <- NULL
 }
 
-<<<<<<< HEAD
-if (is.null(opt$`donor-col`) ||
-    opt$`donor-col` == "NULL") {
-  opt$`donor-col` <- NULL
-}
-
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
 
 # =============================================================================
 # Load inputs
@@ -692,11 +629,7 @@ coding_expressed_set <- NULL
   coding_gr$gene <- coding_genes$gene_name
   
   coding_expressed_set <- unique(coding_genes$gene_name)
-  
-<<<<<<< HEAD
-  print(coding_gr)
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
+
   cat("Coding genes loaded:", length(coding_expressed_set), "\n")
 
 
@@ -731,16 +664,6 @@ message(paste0(
   "  CUTOFF:                  ", opt$cutoff,                      "\n",
   "  REMOVE_REFERENCE:        ", opt$`remove-reference`,          "\n",
   "  PATTERN:                 ", opt$pattern,                     "\n",
-<<<<<<< HEAD
-  "  MAX_GAP:                 ", opt$`max-gap`,                   "\n",
-  "  MIN_OVERLAP_CONSISTENT:  ", opt$`min-overlap-consistent-calls`, "\n",
-  "  MIN_OVERLAP_NODES:       ", opt$`min-overlap-multiple-nodes`,"\n",
-  "  FILTER_SEQ_MB_INIT:      ", opt$`filter-seq-mb-init`,        "\n",
-  "  FILTER_SEQ_MB_EQUIV:     ", opt$`filter-seq-mb-equiv`,       "\n",
-=======
-  "  MIN_OVERLAP_CONSISTENT:  ", opt$`min-overlap-consistent-calls`, "\n",
-  "  MIN_OVERLAP_NODES:       ", opt$`min-overlap-multiple-nodes`,"\n",
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   "  MIN_REFERENCES:          ", opt$`min-references`,            "\n",
   "  GROUP_COLS:              ", paste(group_cols, collapse = ", "), "\n",
   "  K_DISCRETE_VAlUE         ", k_interval, "\n",
@@ -767,12 +690,6 @@ message(paste0(
 
 
 
-<<<<<<< HEAD
-print(opt$`clonal-col`)
-print(opt$`donor-col`)
-=======
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
-
 results <- run_full_cnv_pipeline(
   
   # ---- General ─────────────────────────────────────────────────────────────
@@ -794,25 +711,12 @@ results <- run_full_cnv_pipeline(
   remove_ref             = isTRUE(opt$`remove-reference`),  
   resume_if_exists       = isTRUE(opt$`resume-if-exists`),
   clonal_col = opt$`clonal-col`,
-<<<<<<< HEAD
-  donor_col = opt$`donor-col`,
-  
-  # ---- Block 2 ─────────────────────────────────────────────────────────────
-  pattern                      = opt$pattern,
-  max_gap                      = opt$`max-gap`,
-  k_discrete                   = k_interval,
-  min_overlap_consistent_calls = opt$`min-overlap-consistent-calls`,
-  min_overlap_multiple_nodes   = opt$`min-overlap-multiple-nodes`,
-  filter_seq_mb_init           = opt$`filter-seq-mb-init`,
-  filter_seq_mb_equiv          = opt$`filter-seq-mb-equiv`,
-=======
   
   # ---- Block 2 ─────────────────────────────────────────────────────────────
   pattern                      = opt$pattern,
   k_discrete                   = k_interval,
   min_overlap_consistent_calls = opt$`min-overlap-consistent-calls`,
   min_overlap_multiple_nodes   = opt$`min-overlap-multiple-nodes`,
->>>>>>> f7a7a33 (feat: initial commit of CNV pipeline scripts)
   min_references               = opt$`min-references`,
   parallel                     = isTRUE(opt$parallel),
   cores                        = opt$cores,

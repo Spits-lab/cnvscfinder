@@ -22,8 +22,6 @@ install_if_missing(bioc_packages, BiocManager::install)
 
 message("Environment setup complete.")
 
-In each of cnv_processing.R, cnv_scoring.R, gsva_gsea.R, replace the current block (package vectors + install_if_missing() definition + its two invocations + the BiocManager bootstrap check + the loading loop) with just the package vector (minus "BiocManager", no longer needed at runtime) and the loading loop:
-
 cran_packages <- c(
   "dplyr", "tidyr", "data.table", "cowplot", "igraph", "purrr"
 )
