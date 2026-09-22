@@ -109,11 +109,11 @@ Rscript ${SCRIPT} \
   --max-gap-mb                "${MAX_GAP_MB}" \
   --clonal-col                "${CLONAL_COL}" \
   --range                        "${RANGE}" \
-  --max-mb                       "${MAX_MB}" 
-  
-echo "Done: $(date)"
+  --max-mb                       "${MAX_MB}"
 
 EXIT_CODE=$?
+
+echo "Done: $(date)"
 
 if [ ${EXIT_CODE} -eq 0 ]; then
     echo "Pipeline completed at $(date)"
