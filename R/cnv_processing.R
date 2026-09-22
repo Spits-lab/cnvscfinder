@@ -1810,7 +1810,7 @@ run_fast_cnv_pipeline <- function(
   
   message("→ Assigning CNV equivalence")
   equiv <- assign_cnv_equivalence(
-    df = merged,
+    df = filt_segments,
     min_overlap = min_overlap_consistent_calls,
     overlap_method         = overlap_method_equiv_cnv_call_merge,
     filter_seq_mb          = filter_seq_mb_equiv,
