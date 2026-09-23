@@ -105,20 +105,61 @@ classify_cnv_arms <- function(cnv_df, chromosome_arms) {
     cnv_df$arm_class <- character(0)
     return(cnv_df)
   }
-  
-  arms_by_chr <- split(chromosome_arms, chromosome_arms$chr)
-  
-  cnv_df$arm_class <- vapply(
-    seq_len(nrow(cnv_df)),
-    function(i) {
-      
-      chr_arms <- arms_by_chr[[as.character(cnv_df[i,]$chr)]]
-      if (is.null(chr_arms)) return(NA_character_)
-      classify_single_cnv(cnv_df[i, ], chr_arms)
-    },
-    character(1)
+
+  # ── Vectorized arm classification ─────────────────────────────────────────
+  # A single genome-wide overlap pass instead of one cnv_df[i,] extraction
+  # per row — same classification logic (which set of p/cen/q arms a CNV
+  # overlaps), just computed for all rows at once.
+  cnv_gr <- GenomicRanges::GRanges(
+    seqnames = cnv_df$chr,
+    ranges   = IRanges::IRanges(start = cnv_df$start, end = cnv_df$end)
   )
-  
+
+  arms_gr <- GenomicRanges::GRanges(
+    seqnames = chromosome_arms$chr,
+    ranges   = IRanges::IRanges(
+      start = chromosome_arms$arm_start,
+      end   = chromosome_arms$arm_end
+    )
+  )
+  arms_gr$arm <- chromosome_arms$arm
+
+  # minoverlap = 2L (not the default 1L): matches overlap_bp()'s
+  # min(end) - max(start) with no +1 — a single shared boundary position
+  # (width 1 in GRanges' closed-interval terms) does not count as a hit,
+  # consistent with classify_single_cnv()'s `ov > 0` check.
+  hits <- GenomicRanges::findOverlaps(
+    cnv_gr, arms_gr, type = "any", minoverlap = 2L
+  )
+
+  hit_tbl <- data.frame(
+    row_idx = S4Vectors::queryHits(hits),
+    # as.character: arm is a factor (levels p, cen, q) in the real arms file,
+    # and sort() on a factor orders by level → "p,cen,q", missing the lookup
+    arm     = as.character(arms_gr$arm[S4Vectors::subjectHits(hits)])
+  )
+
+  # Collapse hit arms per row into a sorted key, e.g. "cen,p,q"
+  arm_key <- hit_tbl |>
+    dplyr::distinct() |>
+    dplyr::group_by(row_idx) |>
+    dplyr::summarise(
+      key = paste(sort(unique(arm)), collapse = ","),
+      .groups = "drop"
+    )
+
+  class_lookup <- c(
+    "cen,p,q" = "p_centromere_q",
+    "cen,p"   = "p_centromere",
+    "cen,q"   = "centromere_q",
+    "p"       = "p_arm",
+    "q"       = "q_arm"
+  )
+
+  arm_class_vec <- rep(NA_character_, nrow(cnv_df))
+  arm_class_vec[arm_key$row_idx] <- unname(class_lookup[arm_key$key])
+  cnv_df$arm_class <- arm_class_vec
+
   na_rate <- mean(is.na(cnv_df$arm_class))
   if (na_rate > 0.1) {
     warning(sprintf(
