@@ -720,8 +720,21 @@ coding_expressed_set <- NULL
 
 
 # =============================================================================
-# Create output directory
+# Run identity + output directory
 # =============================================================================
+
+# Job ID ties the .err/.out logs, the output folder and run_summary.json together
+job_id     <- Sys.getenv("SLURM_JOB_ID", unset = "")
+run_id     <- if (nzchar(job_id)) job_id else format(Sys.time(), "%Y%m%d_%H%M%S")
+start_time <- Sys.time()
+
+# Never overwrite a previous run: a non-empty WORKDIR gets a _<run_id> suffix
+requested_workdir <- opt$workdir
+if (dir.exists(opt$workdir) &&
+    length(list.files(opt$workdir, all.files = TRUE, no.. = TRUE)) > 0L) {
+  opt$workdir <- paste0(sub("/+$", "", opt$workdir), "_", run_id)
+  message("WORKDIR '", requested_workdir, "' is not empty — writing to: ", opt$workdir)
+}
 
 if (!dir.exists(opt$workdir)) {
   message("Creating output directory: ", opt$workdir)
@@ -735,6 +748,10 @@ if (!dir.exists(opt$workdir)) {
 
 message(paste0(
   "\n=== Submission parameters ===\n",
+  "  JOB_ID:                  ", if (nzchar(job_id)) job_id else "interactive", "\n",
+  "  START_TIME:              ", format(start_time, "%Y-%m-%d %H:%M:%S"), "\n",
+  "  HOST:                    ", Sys.info()[["nodename"]],        "\n",
+  "  REQUESTED_WORKDIR:       ", requested_workdir,               "\n",
   "  EXECUTION_MODE:          ", opt$`execution-mode`,            "\n",
   "  START_FROM:              ", opt$`start-from`,                "\n",
   "  WORKDIR:                 ", opt$workdir,                     "\n",
@@ -843,8 +860,34 @@ results <- run_full_cnv_pipeline(
 # Save outputs
 # =============================================================================
 
+end_time <- Sys.time()
+
+# Per-job record for comparing runs later (job ID, parameters, per-block counts).
+# run_full_cnv_pipeline() returns the summary as an unnamed list(summary = ...)
+summary_elt <- Filter(function(x) is.list(x) && "summary" %in% names(x), results)
+
+run_info <- list(
+  job_id            = if (nzchar(job_id)) job_id else NA_character_,
+  run_id            = run_id,
+  host              = Sys.info()[["nodename"]],
+  start_time        = format(start_time, "%Y-%m-%d %H:%M:%S"),
+  end_time          = format(end_time,   "%Y-%m-%d %H:%M:%S"),
+  requested_workdir = requested_workdir,
+  workdir           = opt$workdir,
+  parameters        = opt[setdiff(names(opt), "help")],
+  summary           = if (length(summary_elt)) summary_elt[[1]]$summary else NULL
+)
+results$run_info <- run_info
+
 out_path <- file.path(opt$workdir, "pipeline_results.rds")
 message("Saving full pipeline results to: ", out_path)
 saveRDS(results, out_path)
+
+summary_path <- file.path(opt$workdir, "run_summary.json")
+jsonlite::write_json(
+  run_info, summary_path,
+  auto_unbox = TRUE, pretty = TRUE, null = "null", na = "null", digits = NA
+)
+message("Run summary saved to: ", summary_path)
 
 message(sprintf("\nDone. Results saved to: %s", out_path))
