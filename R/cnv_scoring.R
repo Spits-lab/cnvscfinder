@@ -271,12 +271,14 @@ run_cnv_locus_analysis <- function(
       return(list(
         clustered_events  = clustered_table_with_equiv_id,
         remove_log        = clustered$removed_log,
-        cnv_locus_summary = summary_tbl
+        cnv_locus_summary = summary_tbl,
+        group_timing      = clustered$group_timing
       ))
     } else {
       return(list(
         clustered_events  = clustered_table_with_equiv_id,
-        cnv_locus_summary = summary_tbl
+        cnv_locus_summary = summary_tbl,
+        group_timing      = clustered$group_timing
       ))
     }
   
