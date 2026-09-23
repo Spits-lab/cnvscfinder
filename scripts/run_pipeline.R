@@ -168,7 +168,7 @@ optparse::make_option(
   optparse::make_option(
     "--chr-exclude",
     type    = "character",
-    default = "MT,Y",
+    default = "chrMT,chrY",
     help    = "Comma-separated chromosomes to exclude [default: %default]"
   ),
   optparse::make_option(
@@ -452,7 +452,7 @@ source(file.path(project_dir, "R", "pipeline.R"))
 
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
-chr_exclude   <- as.character(trimws(strsplit(opt$`chr-exclude` %||% "MT,Y", ",")[[1]]))
+chr_exclude   <- as.character(trimws(strsplit(opt$`chr-exclude` %||% "chrMT,chrY", ",")[[1]]))
 group_cols    <- trimws(strsplit(opt$`group-cols`, ",")[[1]])
 
 
