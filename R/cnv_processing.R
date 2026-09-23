@@ -726,21 +726,35 @@ assign_cnv_equivalence <- function(
   n_rows_postfilter <- nrow(df)
   
   # ---- Split into groups --------------------------------------------------
-  group_indices <- df |>
+  grouped_df <- df |>
     dplyr::mutate(.row_idx = dplyr::row_number()) |>
-    dplyr::group_by(dplyr::across(all_of(by_columns))) |>
-    dplyr::group_split()
-  
-  
+    dplyr::group_by(dplyr::across(all_of(by_columns)))
+
+  group_keys    <- dplyr::group_keys(grouped_df)
+  group_indices <- dplyr::group_split(grouped_df)
+  group_labels  <- do.call(paste, c(as.list(group_keys), sep = "|"))
+
   message(sprintf("Processing %d groups (%s combinations)",
                   length(group_indices), paste(by_columns, collapse = " x ")))
-  
-  # ---- Step 1: process groups ---------------------------------------------
-  
+
+  # ---- Step 1: process groups (timed) --------------------------------------
+  # Wraps process_cnv_cluster to record per-group elapsed time and size —
+  # exact-maximal-clique enumeration is cheap for the many-tiny-groups case
+  # (Block2, per cell) but can dominate runtime for the few-large-groups case
+  # (Block4, pooled across cells per locus). Timing makes that visible instead
+  # of a single opaque wall-clock number.
+  .process_cnv_cluster_timed <- function(grp, ...) {
+    t0  <- proc.time()[["elapsed"]]
+    res <- process_cnv_cluster(grp, ...)
+    res$elapsed_s  <- proc.time()[["elapsed"]] - t0
+    res$n_segments <- nrow(grp)
+    res
+  }
+
   if (parallel) {
     results <- BiocParallel::bplapply(
       group_indices,
-      process_cnv_cluster,
+      .process_cnv_cluster_timed,
       overlap_method         = overlap_method,
       min_overlap = min_overlap,
       range                = range,
@@ -751,7 +765,7 @@ assign_cnv_equivalence <- function(
   } else {
     results <- lapply(
       group_indices,
-      process_cnv_cluster,
+      .process_cnv_cluster_timed,
       overlap_method         = overlap_method,
       min_overlap = min_overlap,
       range                = range,
@@ -759,7 +773,38 @@ assign_cnv_equivalence <- function(
       max_mb               = max_mb
     )
   }
-  
+
+  # ---- Group timing summary ------------------------------------------------
+  group_timing <- data.frame(
+    group      = group_labels,
+    n_segments = vapply(results, `[[`, numeric(1), "n_segments"),
+    elapsed_s  = vapply(results, `[[`, numeric(1), "elapsed_s"),
+    stringsAsFactors = FALSE
+  )
+  group_timing <- group_timing[order(-group_timing$elapsed_s), ]
+
+  top_n <- min(5L, nrow(group_timing))
+  message(sprintf(paste0(
+    "Group processing time (process_cnv_cluster):\n",
+    "  Groups:  %d\n",
+    "  Total:   %.1f s\n",
+    "  Median:  %.2f s\n",
+    "  Max:     %.2f s (group: %s, n=%d segments)\n",
+    "  Top %d slowest:\n%s"
+  ),
+  nrow(group_timing),
+  sum(group_timing$elapsed_s),
+  stats::median(group_timing$elapsed_s),
+  group_timing$elapsed_s[1], group_timing$group[1], group_timing$n_segments[1],
+  top_n,
+  paste(sprintf("    %d. %-30s n=%-8d %.2f s",
+                seq_len(top_n),
+                group_timing$group[seq_len(top_n)],
+                group_timing$n_segments[seq_len(top_n)],
+                group_timing$elapsed_s[seq_len(top_n)]),
+        collapse = "\n")
+  ))
+
   # ---- Step 2: assign composite equiv IDs ---------------------------------
   # Composite key = cell_name|chr|cnv_state|local_clique_id
   # Unique by construction — no global counter needed
@@ -866,7 +911,7 @@ assign_cnv_equivalence <- function(
     total_duplicated
   ))
   
-  list(results_id = result, removed_log = removed_log)
+  list(results_id = result, removed_log = removed_log, group_timing = group_timing)
 }
 
 
