@@ -1283,7 +1283,8 @@ run_full_cnv_pipeline <- function(
     message("\n[3/4] Annotating CNV events...")
     t3 <- proc.time()
     
-    cnv_annotated <- add_chromosome_info(
+    # All segments with arm info added; some may lack an arm_class (split below)
+    cnv_with_arms <- add_chromosome_info(
       supported_events,
       chromosome_arms,
       chr_col   = chr_col,
@@ -1307,13 +1308,30 @@ run_full_cnv_pipeline <- function(
       cell_col   = cell_col
     )
     
+    # Segments without an arm class would be silently dropped by Block 4's
+    # arm-based cell filter — keep them aside so they stay inspectable
+    is_unannotated <- is.na(cnv_with_arms$arm_class)
+    cnv_annotated  <- cnv_with_arms[!is_unannotated, ]
+    unannotated    <- cnv_with_arms[is_unannotated, ]
+
+    if (nrow(unannotated) > 0L) {
+      chr_counts <- table(as.character(unannotated[[chr_col]]))
+      message(sprintf(
+        "  %d segments without arm annotation moved to block3$unannotated (per chr: %s)",
+        nrow(unannotated),
+        paste(names(chr_counts), chr_counts, sep = "=", collapse = ", ")
+      ))
+    }
+
     results$block3 <- list(
       cnv_annotated = cnv_annotated,
-      cell_sizes    = cell_sizes
+      cell_sizes    = cell_sizes,
+      unannotated   = unannotated
     )
-    
+
     summaries$block3 <- list(
       n_annotated     = nrow(cnv_annotated),
+      n_unannotated   = nrow(unannotated),
       n_groups        = nrow(cell_sizes),
       cell_size_range = range(cell_sizes$n_total_cells),
       runtime_s       = (proc.time() - t3)[["elapsed"]]
@@ -1409,9 +1427,10 @@ run_full_cnv_pipeline <- function(
     )
     
     summaries$block4 <- list(
-      n_clustered = nrow(clustered_events$clustered_events),
-      n_scored    = nrow(scored_events),
-      runtime_s   = (proc.time() - t4)[["elapsed"]]
+      n_clustered  = nrow(clustered_events$clustered_events),
+      n_scored     = nrow(scored_events),
+      runtime_s    = (proc.time() - t4)[["elapsed"]],
+      group_timing = clustered_events$group_timing
     )
     
     message(sprintf(
