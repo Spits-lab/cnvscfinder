@@ -349,7 +349,7 @@ optparse::make_option(
 optparse::make_option(
   "--k-interval",
   type    = "double",
-  default = 60,
+  default = 1.5,
   help    = " Turning continous values of gain and loss into discrete ones"
 ),
   optparse::make_option(
@@ -514,7 +514,88 @@ check_no_na(opt$`sensitivity-floor-mb`, "--sensitivity-floor-mb")
 check_no_na(opt$`min-coding-density`, "--min-coding-density")
 check_no_na(opt$`max-gap-mb`, "--max-gap-mb")
 check_no_na(opt$`range`,              "--range")
-check_no_na(opt$`max-mb`,             "--max-mb") 
+check_no_na(opt$`max-mb`,             "--max-mb")
+
+# ── Validate value ranges ────────────────────────────────────────────────────
+# Fail here, before Block 2 spends ~1h, rather than silently mis-filtering later
+check_range <- function(val, name, lower, upper,
+                        lower_inclusive = FALSE, upper_inclusive = TRUE,
+                        hint = NULL) {
+  ok_lower <- if (lower_inclusive) val >= lower else val > lower
+  ok_upper <- if (upper_inclusive) val <= upper else val < upper
+  if (!ok_lower || !ok_upper) {
+    stop(sprintf(
+      "%s = %g is out of range: must be %s %g and %s %g.%s",
+      name, val,
+      if (lower_inclusive) ">=" else ">", lower,
+      if (upper_inclusive) "<=" else "<", upper,
+      if (is.null(hint)) "" else paste0("\n", hint)
+    ))
+  }
+}
+
+check_range(opt$`min-overlap`, "--min-overlap", 0, 1,
+            hint = "Overlap is a fraction (e.g. 0.7), not a percentage.")
+check_range(opt$`min-overlap-consistent-calls`, "--min-overlap-consistent-calls", 0, 1,
+            hint = "Overlap is a fraction (e.g. 0.75), not a percentage.")
+check_range(opt$`min-overlap-multiple-nodes`, "--min-overlap-multiple-nodes", 0, 1,
+            hint = "Overlap is a fraction (e.g. 0.6), not a percentage.")
+check_range(opt$`min-required-cells`, "--min-required-cells", 1, Inf,
+            lower_inclusive = TRUE)
+check_range(opt$`min-references`, "--min-references", 1, opt$`n-splits-within`,
+            lower_inclusive = TRUE,
+            hint = "Cannot require more references than --n-splits-within.")
+check_range(opt$`k-value`,              "--k-value",              0, Inf)
+check_range(k_interval,                 "--k-interval",           0, Inf)
+check_range(opt$`sensitivity-floor-mb`, "--sensitivity-floor-mb", 0, 150,
+            hint = "Above 150 Mb, most chromosome arms can no longer be assessed.")
+check_range(opt$cores,                  "--cores",                1, Inf,
+            lower_inclusive = TRUE)
+
+for (pct in c("pct-floor", "pct-max")) {
+  check_range(opt[[pct]], paste0("--", pct), 0, 100, lower_inclusive = TRUE)
+}
+if (opt$`pct-floor` > opt$`pct-max`) {
+  stop(sprintf("--pct-floor (%g) must not exceed --pct-max (%g).",
+               opt$`pct-floor`, opt$`pct-max`))
+}
+
+# Errors with the list of valid methods if unknown (registry in compute_overlap)
+invisible(compute_overlap(1L, 2L, 1L, 2L, method = opt$`overlap-method`))
+
+for (perm in c("p-arm-permission", "q-arm-permission", "whole-chr-permission")) {
+  check_range(opt[[perm]], paste0("--", perm), 0, 100,
+              hint = "Arm permissions are percentages (e.g. 60), not fractions.")
+  if (opt[[perm]] <= 1) {
+    warning(sprintf(
+      "--%s = %g is interpreted as %g%%. Did you mean %g?",
+      perm, opt[[perm]], opt[[perm]], opt[[perm]] * 100
+    ))
+  }
+}
+
+if (opt$`overlap-method` %in% c("adaptive", "adaptive_floor")) {
+  # Loosest threshold each method reaches at max_mb (see size_adaptive_overlap*)
+  lowest <- if (opt$`overlap-method` == "adaptive_floor") {
+    opt$`min-overlap` - opt$range
+  } else {
+    opt$`min-overlap` - opt$range / 2
+  }
+  check_range(opt$range, "--range", 0, 1, upper_inclusive = FALSE,
+              hint = "--range is a fraction (e.g. 0.15), not a percentage.")
+  if (lowest <= 0) {
+    stop(sprintf(
+      "--range = %g with --min-overlap = %g gives a lowest overlap threshold of %g (must be > 0).",
+      opt$range, opt$`min-overlap`, lowest
+    ))
+  }
+  if (opt$`max-mb` <= opt$`sensitivity-floor-mb`) {
+    stop(sprintf(
+      "--max-mb (%g) must be greater than --sensitivity-floor-mb (%g).",
+      opt$`max-mb`, opt$`sensitivity-floor-mb`
+    ))
+  }
+}
 
 
 cat("Type conversion complete\n")
@@ -524,6 +605,10 @@ if (is.null(opt$`clonal-col`) ||
     opt$`clonal-col` == "NULL") {
   opt$`clonal-col` <- NULL
 }
+
+
+
+
 
 
 # =============================================================================
