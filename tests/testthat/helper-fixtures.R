@@ -1,14 +1,6 @@
 
 
-source("~/GitHub/cnvscfinder/R/cnv_annotation.R")
-source("~/GitHub/cnvscfinder/R/cnv_processing.R")
-source("~/GitHub/cnvscfinder/R/cnv_scoring.R")
-source("~/GitHub/cnvscfinder/R/gsva_gsea.R")
-source("C:/Users/pmgra/Documents/GitHub/cnvscfinder/R/infercnv.R")
-source("C:/Users/pmgra/Documents/GitHub/cnvscfinder/R/pipeline.R")
-
-
-hg38_chromosome_arms <- readRDS("C:/Users/pmgra/Documents/GitHub/cnvscfinder/tests/testthat/fixtures/hg38_chromosome_arms.rds")
+hg38_chromosome_arms <- readRDS(testthat::test_path("fixtures", "hg38_chromosome_arms.rds"))
 
 
 

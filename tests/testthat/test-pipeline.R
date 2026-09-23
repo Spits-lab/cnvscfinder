@@ -1,5 +1,3 @@
-source("C:/Users/pmgra/Documents/GitHub/cnvscfinder/tests/testthat/helper-fixtures.R")
-source("C:/Users/pmgra/Documents/GitHub/cnvscfinder/R/pipeline.R")
 
 # tests/testthat/test-pipeline.R
 # Tests for R/pipeline.R

@@ -1,5 +1,3 @@
-source("C:/Users/pmgra/Documents/GitHub/cnvscfinder/tests/testthat/helper-fixtures.R")
-source("C:/Users/pmgra/Documents/GitHub/cnvscfinder/R/cnv_annotation.R")
 
 # ============================================================================
 # overlap_bp
@@ -163,6 +161,25 @@ testthat::test_that("classify_cnv_arms: chr1 loss at 117-150Mb is p_centromere_q
   df  <- make_mock_cnv()[1, ]
   out <- classify_cnv_arms(df, hg38_chromosome_arms)
   testthat::expect_equal(out$arm_class, "p_centromere_q")
+})
+
+testthat::test_that("classify_cnv_arms: factor arm column classifies centromere-crossing CNVs", {
+
+  # data/hg38_chromosome_arms.rds stores arm as a factor (levels p, cen, q);
+  # the fixture stores it as character, so this case needs its own test
+  arms     <- hg38_chromosome_arms
+  arms$arm <- factor(arms$arm, levels = c("p", "cen", "q"))
+
+  df <- data.frame(
+    chr   = "chr1",
+    start = c(117e6, 100e6, 123e6, 10e6),
+    end   = c(150e6, 123e6, 200e6, 50e6)
+  )
+  out <- classify_cnv_arms(df, arms)
+  testthat::expect_equal(
+    out$arm_class,
+    c("p_centromere_q", "p_centromere", "centromere_q", "p_arm")
+  )
 })
 
 # ============================================================================

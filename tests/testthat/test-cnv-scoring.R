@@ -1,5 +1,3 @@
-source("C:/Users/pmgra/Documents/GitHub/cnvscfinder/tests/testthat/helper-fixtures.R")
-source("C:/Users/pmgra/Documents/GitHub/cnvscfinder/R/cnv_scoring.R")
 
 
 testthat::test_that("make_tier_definitions: fractions mode returns correct structure", {
