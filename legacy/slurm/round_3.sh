@@ -1,5 +1,7 @@
 #!/bin/bash
-# slurm/run_round3_benchmark.sh
+# legacy/slurm/round_3.sh
+# Legacy (VUB04-only, hard-coded): superseded by slurm/run_grid_search.sh.
+# Kept as-is for reference; not actively maintained.
 BASE="/scratch/brussel/vo/000/bvo00016/vsc11567/cnv_framework"
 
 module purge
@@ -18,7 +20,7 @@ sbatch \
     module load inferCNV/1.18.1-foss-2023a
     module load R-bundle-Bioconductor/3.18-foss-2023a-R-4.3.2
     module load R-bundle-CRAN/2023.12-foss-2023a
-    Rscript ${BASE}/scripts/run_block_test.R
+    Rscript ${BASE}/legacy/scripts/run_block_test.R
   "
 
 echo "Submitted ✅"
