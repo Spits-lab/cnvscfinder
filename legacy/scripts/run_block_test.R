@@ -1,3 +1,10 @@
+# =============================================================================
+# legacy/scripts/run_block_test.R
+# Legacy (VUB04-only, hard-coded paths and grid values): superseded by
+# scripts/run_grid_search.R, which is YAML-config-driven and dataset-agnostic.
+# Kept as-is for reference; not actively maintained.
+# =============================================================================
+
 process_cnv_connected <- function(
     grp,
     overlap_method,
