@@ -280,7 +280,7 @@ map_cnv_to_genome <- function(cnv_filtered,
   distinct_dfs_cols <- c("cell_name", arrange_df_cols)
   cell_order <- cnv_filtered %>%
     distinct(across(all_of(distinct_dfs_cols))) %>%
-    arrange(all_of(arrange_df_cols))
+    arrange(across(all_of(arrange_df_cols)))
   
   cnv_mapped <- cnv_mapped %>%
     mutate(
