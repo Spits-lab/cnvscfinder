@@ -12,6 +12,7 @@ suppressPackageStartupMessages({
   library(infercnv)
   library(optparse)
 })
+source(file.path(BASE, "R/config.R"))
 source(file.path(BASE, "R/iteration.R"))
 
 opt <- parse_args(OptionParser(option_list = list(
