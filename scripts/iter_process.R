@@ -14,7 +14,7 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 for (f in c("cnv_processing.R", "cnv_scoring.R", "cnv_annotation.R",
-            "pipeline.R", "infercnv.R", "iteration.R")) {
+            "pipeline.R", "infercnv.R", "config.R", "iteration.R")) {
   source(file.path(BASE, "R", f))
 }
 

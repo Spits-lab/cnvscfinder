@@ -227,6 +227,49 @@ assert_valid_config <- function(cfg, ...) {
 
 # ── Grid-search config ───────────────────────────────────────────────────────
 
+#' Resolve `iter_path` (an exact iteration folder, or the iterations root
+#' containing `iter_<n>` subfolders) to the run.final.infercnv_obj it names.
+#'
+#' Exact mode: `iter_path` itself has an `infercnv/run.final.infercnv_obj`.
+#' Root mode: `iter_path` has `iter_<n>` subfolders; the highest-numbered one
+#' that has a `run.final.infercnv_obj` is picked (once an iteration plateaus,
+#' every later one exits before its folder is even created - see
+#' slurm/iter_job.sh - so "highest existing" already lands on the plateaued
+#' iteration in the common case). Whether that iteration actually plateaued is
+#' not this function's concern - that's known ahead of time, separately.
+#'
+#' @return list(obj_path, iter_dir, mode, error) - obj_path is NULL when error is set.
+resolve_iter_infercnv_obj <- function(iter_path) {
+  if (is.null(iter_path) || !dir.exists(iter_path)) {
+    return(list(obj_path = NULL, iter_dir = NULL, mode = NULL,
+                error = paste0("iter_path does not exist: ", iter_path)))
+  }
+
+  direct_obj <- file.path(iter_path, "infercnv", "run.final.infercnv_obj")
+  if (file.exists(direct_obj)) {
+    return(list(obj_path = direct_obj, iter_dir = iter_path, mode = "exact", error = NULL))
+  }
+
+  entries <- list.files(iter_path, pattern = "^iter_[0-9]+$")
+  if (length(entries) == 0L) {
+    return(list(obj_path = NULL, iter_dir = NULL, mode = NULL, error = paste0(
+      "iter_path (", iter_path, ") is neither an iteration folder (no infercnv/",
+      "run.final.infercnv_obj) nor an iterations root (no iter_<N> subfolders)")))
+  }
+  nums    <- as.integer(sub("^iter_", "", entries))
+  ordered <- entries[order(nums, decreasing = TRUE)]
+  for (e in ordered) {
+    cand_dir <- file.path(iter_path, e)
+    cand_obj <- file.path(cand_dir, "infercnv", "run.final.infercnv_obj")
+    if (file.exists(cand_obj)) {
+      return(list(obj_path = cand_obj, iter_dir = cand_dir, mode = "root", error = NULL))
+    }
+  }
+  list(obj_path = NULL, iter_dir = NULL, mode = "root", error = paste0(
+    "iter_path (", iter_path, ") has iter_<N> subfolders but none contain ",
+    "infercnv/run.final.infercnv_obj"))
+}
+
 #' Check a grid-search config before any combo runs
 #'
 #' Collects every problem instead of stopping at the first. Cheap: never loads
@@ -241,7 +284,7 @@ validate_grid_search_config <- function(cfg, overlap_ok = NULL) {
   add_wrn <- function(...) wrn <<- c(wrn, paste0(...))
 
   known <- c(
-    "infercnv_obj_path", "metadata_path", "chromosome_arms_path",
+    "iter_path", "metadata_path", "chromosome_arms_path",
     "coding_genes_path", "out_dir", "cell_col", "group_value",
     "cell_group_cluster", "k_dis_values", "k_fre_values", "sens_floor_values",
     "ovlp_values", "pct_floor_values", "min_expr_density_values", "pct_max",
@@ -319,8 +362,12 @@ validate_grid_search_config <- function(cfg, overlap_ok = NULL) {
   }
 
   # ── Files ──────────────────────────────────────────────────────────────────
-  for (k in c("infercnv_obj_path", "metadata_path", "chromosome_arms_path", "coding_genes_path")) {
+  for (k in c("metadata_path", "chromosome_arms_path", "coding_genes_path")) {
     if (has(k) && !file.exists(cfg[[k]])) add_err(k, ": file not found: ", cfg[[k]])
+  }
+  if (has("iter_path")) {
+    resolved <- resolve_iter_infercnv_obj(cfg$iter_path)
+    if (!is.null(resolved$error)) add_err("iter_path: ", resolved$error)
   }
 
   # ── Grid size sanity ───────────────────────────────────────────────────────
