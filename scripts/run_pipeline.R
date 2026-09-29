@@ -10,7 +10,6 @@
 #   Resume block2-4 after single job block1:
 #     Rscript run_pipeline.R --execution-mode single --start-from block2 ...
 #   Resume block2-4 after array job block1:
-#     Rscript run_pipeline.R --execution-mode array --start-from block2 ...
 #   Rscript run_pipeline.R --help
 # =============================================================================
 
@@ -443,6 +442,7 @@ source(file.path(project_dir, "R", "cnv_processing.R"))
 source(file.path(project_dir, "R", "cnv_scoring.R"))
 source(file.path(project_dir, "R", "infercnv.R"))
 source(file.path(project_dir, "R", "pipeline.R"))
+source(file.path(project_dir, "R", "config.R"))
 
 # =============================================================================
 # Parse vector arguments
@@ -521,9 +521,7 @@ check_no_na(opt$`max-mb`,             "--max-mb")
 check_range <- function(val, name, lower, upper,
                         lower_inclusive = FALSE, upper_inclusive = TRUE,
                         hint = NULL) {
-  ok_lower <- if (lower_inclusive) val >= lower else val > lower
-  ok_upper <- if (upper_inclusive) val <= upper else val < upper
-  if (!ok_lower || !ok_upper) {
+  if (!in_range(val, lower, upper, lower_inclusive, upper_inclusive)) {
     stop(sprintf(
       "%s = %g is out of range: must be %s %g and %s %g.%s",
       name, val,
